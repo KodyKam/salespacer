@@ -14,4 +14,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
 
-export { connectDB }
+console.log("MONGO_URI =", process.env.MONGO_URI)
