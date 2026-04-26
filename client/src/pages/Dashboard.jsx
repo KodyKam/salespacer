@@ -7,6 +7,7 @@ import BottomNav from "../components/BottomNav"
 import FloatingAddSale from "../components/FloatingAddSale"
 import axios from "../api/axios"
 import { useState } from "react"
+import { Snackbar, Alert } from "@mui/material"
 
 const Dashboard = () => {
   const { data, refresh } = useDashboard()
@@ -20,6 +21,11 @@ const Dashboard = () => {
       console.error(err)
     }
   }
+
+  const [toast, setToast] = useState({
+    open: false,
+    amount: 0
+  })
 
   if (!data) return <p style={{ padding: 16 }}>Loading...</p>
 
@@ -107,11 +113,28 @@ const Dashboard = () => {
 
       {/* 🔥 THIS IS THE KEY */}
       <FloatingAddSale
-        onSuccess={refresh}
         disabled={safe.isDayCompleted}
+        onSuccess={(amount) => {
+          refresh()
+
+          setToast({
+            open: true,
+            amount
+          })
+        }}
       />
 
       <BottomNav />
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={2000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="success" variant="filled">
+          +${toast.amount} added
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

@@ -29,7 +29,10 @@ const BottomNav = ({ onAdd }) => {
         <BottomNavigationAction
           label="Add"
           icon={<AddIcon />}
-          onClick={() => window.dispatchEvent(new Event("open-add-sale"))}
+          onClick={() => {
+            console.log("NAV ADD CLICKED")
+            window.dispatchEvent(new Event("open-add-sale"))
+          }}
         />
 
         <BottomNavigationAction

@@ -8,12 +8,26 @@ import {
   Fab
 } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "../api/axios"
 
 const FloatingAddSale = ({ onSuccess, disabled }) => {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState("")
+
+  // ✅ LISTENER MUST LIVE HERE (top-level)
+  useEffect(() => {
+    const openHandler = () => {
+      console.log("EVENT RECEIVED")
+      setOpen(true)
+    }
+
+    window.addEventListener("open-add-sale", openHandler)
+
+    return () => {
+      window.removeEventListener("open-add-sale", openHandler)
+    }
+  }, [])
 
   const handleSubmit = async () => {
     if (!value) return
@@ -26,9 +40,7 @@ const FloatingAddSale = ({ onSuccess, disabled }) => {
       setValue("")
       setOpen(false)
 
-      // 🔥 THIS is the refresh trigger
-      onSuccess?.()
-
+      onSuccess?.(Number(value))
     } catch (err) {
       console.error("Add sale failed:", err)
     }
