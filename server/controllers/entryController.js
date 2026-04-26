@@ -60,11 +60,25 @@ export const endDay = async (req, res) => {
 
   const today = new Date().toDateString()
 
-  // const todayEntry = entries.find(
-  //   (e) =>
-  //     e.date &&
-  //     new Date(e.date).toDateString() === today
-  // )
+  const existingSummary = await DailySummary.findOne({
+
+  userId,
+
+  seasonId,
+
+  date: today
+
+})
+
+if (existingSummary) {
+
+  return res.status(400).json({
+
+    message: "Day already completed"
+
+  })
+
+}
 
   const todaySales = entries
     .filter(e => new Date(e.date).toDateString() === today)

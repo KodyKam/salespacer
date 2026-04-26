@@ -5,7 +5,11 @@ const DayActionsBar = ({ onEndDay, disabled }) => {
   return (
     <div style={{ marginTop: "24px" }}>
       <button
-        onClick={onEndDay}
+        onClick={() => {
+          if (confirm("This will lock in today's sales and you won't be able to add any more. Continue?")) {
+            onEndDay()
+          }
+        }}
         disabled={disabled}
         style={{
           width: "100%",
@@ -16,7 +20,7 @@ const DayActionsBar = ({ onEndDay, disabled }) => {
           fontSize: "16px"
         }}
       >
-        🏁 End Day & See Summary
+        🏁 Finish Day 🏁
       </button>
     </div>
   )

@@ -31,7 +31,17 @@ const Settings = () => {
     } catch (err) {
       console.error(err)
     }
+    useEffect(() => {
+    axios.get("/season").then(res => {
+      setForm({
+        incomeGoal: res.data.incomeGoal,
+        commissionRate: res.data.commissionRate * 100,
+        totalWorkDays: res.data.totalWorkDays
+      })
+    })
+  }, [])
   }
+  
 
   return (
     <Box sx={{ p: 2 }}>
@@ -69,6 +79,20 @@ const Settings = () => {
 
       <Button fullWidth variant="contained" onClick={handleSave}>
         Save Changes
+      </Button>
+
+      <Button
+        color="error"
+        fullWidth
+        sx={{ mt: 2 }}
+        onClick={async () => {
+          if (confirm("This will delete all progress. Continue?")) {
+            await axios.delete("/season")
+            navigate("/setup")
+          }
+        }}
+      >
+        Reset Season
       </Button>
     </Box>
   )

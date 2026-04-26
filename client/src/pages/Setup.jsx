@@ -9,9 +9,14 @@ const Setup = () => {
   const [form, setForm] = useState({
     companyName: "",
     incomeGoal: "",
-    commissionRate: "",
+    commissionRate: Number(form.commissionRate) / 100,
     totalWorkDays: ""
   })
+
+  if (!form.incomeGoal || !form.totalWorkDays) {
+  alert("Please fill all fields")
+  return
+}
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -47,14 +52,14 @@ const Setup = () => {
 
         <input
           name="incomeGoal"
-          placeholder="Income Goal"
+          placeholder="Income Goal ($)"
           type="number"
           onChange={handleChange}
         />
 
         <input
           name="commissionRate"
-          placeholder="Commission Rate (0.1 = 10%)"
+          placeholder="Commission Rate (%)"
           type="number"
           step="0.01"
           onChange={handleChange}
@@ -62,7 +67,7 @@ const Setup = () => {
 
         <input
           name="totalWorkDays"
-          placeholder="Total Work Days"
+          placeholder="Number of Work Days"
           type="number"
           onChange={handleChange}
         />
