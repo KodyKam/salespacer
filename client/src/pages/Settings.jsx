@@ -1,5 +1,5 @@
 // client/src/pages/Settings.jsx
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "../api/axios"
 import { useNavigate } from "react-router-dom"
 import { Box, TextField, Button, Typography, IconButton } from "@mui/material"
