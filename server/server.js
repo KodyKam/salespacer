@@ -1,21 +1,10 @@
 // server/server.js
 import app from "./app.js"
 import { connectDB } from "./config/db.js"
-import cors from "cors"
 
-app.use(cors({
+import dotenv from "dotenv"
 
-  origin: [
-
-    "https://salespacer.vercel.app",
-
-    "https://salespacerapp.vercel.app"
-
-  ],
-
-  credentials: true
-
-}))
+dotenv.config()
 
 connectDB()
 
