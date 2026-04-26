@@ -1,14 +1,25 @@
 // server/app.js
 import express from "express"
-import dotenv from "dotenv"
-
 import billingRoutes from "./routes/billingRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js"
 import seasonRoutes from "./routes/seasonRoutes.js"
 import entryRoutes from "./routes/entryRoutes.js"
 import dayRoutes from "./routes/dayRoutes.js"
+import cors from "cors"
 
-dotenv.config()
+app.use(cors({
+
+  origin: [
+
+    "https://salespacer.vercel.app",
+
+    "https://salespacerapp.vercel.app"
+
+  ],
+
+  credentials: true
+
+}))
 
 const app = express()
 
