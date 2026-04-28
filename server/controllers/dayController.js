@@ -5,7 +5,7 @@ import DailySummary from "../models/DailySummary.js"
 
 export const endDay = async (req, res) => {
   try {
-    const userId = req.user.id
+    const userId = "dev-user-123"
 
     const season = await Season.findOne({ userId })
     if (!season) {

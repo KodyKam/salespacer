@@ -10,39 +10,25 @@ import dayRoutes from "./routes/dayRoutes.js"
 
 const app = express()
 
-// --------------------
-// CORS (must be FIRST)
-// --------------------
+// ✅ MUST BE FIRST (before routes)
 app.use(cors({
   origin: [
-    "https://salespacer.vercel.app",
-    "https://salespacerapp.vercel.app"
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://salespacer.vercel.app"
   ],
   credentials: true
 }))
 
-// --------------------
-// Stripe webhook MUST be BEFORE express.json()
-// --------------------
-app.use("/api/billing/webhook", express.raw({ type: "application/json" }))
-
-// --------------------
-// JSON middleware
-// --------------------
 app.use(express.json())
 
-// --------------------
-// Routes
-// --------------------
+// routes
 app.use("/api/billing", billingRoutes)
 app.use("/api/dashboard", dashboardRoutes)
 app.use("/api/season", seasonRoutes)
 app.use("/api/entry", entryRoutes)
 app.use("/api/day", dayRoutes)
 
-// --------------------
-// Health check
-// --------------------
 app.get("/", (req, res) => {
   res.send("API is running")
 })
