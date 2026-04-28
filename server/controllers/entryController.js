@@ -16,6 +16,22 @@ export const addEntry = async (req, res) => {
       return res.status(400).json({ message: "No active season" })
     }
 
+    const today = new Date().toDateString()
+
+    // ✅ CHECK FIRST
+    const existingSummary = await DailySummary.findOne({
+      userId,
+      seasonId: season._id,
+      date: today
+    })
+
+    if (existingSummary) {
+      return res.status(400).json({
+        message: "Day is locked"
+      })
+    }
+
+    // ✅ ONLY CREATE IF ALLOWED
     const entry = await DailyEntry.create({
       userId,
       seasonId: season._id,
@@ -31,66 +47,3 @@ export const addEntry = async (req, res) => {
   }
 }
 
-export const endDay = async (req, res) => {
-  try {
-    const userId = DEV_USER_ID
-
-    const season = await Season.findOne({ userId })
-
-    if (!season) {
-      return res.status(400).json({ message: "No season found" })
-    }
-
-    const seasonId = season._id
-
-    const entries = await DailyEntry.find({
-      userId,
-      seasonId
-    })
-
-    const today = new Date().toDateString()
-
-    const existingSummary = await DailySummary.findOne({
-      userId,
-      seasonId,
-      date: today
-    })
-
-    if (existingSummary) {
-      return res.status(400).json({
-        message: "Day already completed"
-      })
-    }
-
-    const todaySales = entries
-      .filter(e => new Date(e.date).toDateString() === today)
-      .reduce((sum, e) => sum + e.salesVolume, 0)
-
-    const todayTarget = calculateDailyTarget(season, entries)
-
-    const isSuccess = todaySales >= todayTarget
-
-    let newStreak = season.streak || 0
-    newStreak = isSuccess ? newStreak + 1 : 0
-
-    season.streak = newStreak
-    await season.save()
-
-    const summary = {
-      todaySales,
-      todayTarget,
-      difference: todaySales - todayTarget,
-      isSuccess,
-      streak: newStreak,
-      message: isSuccess
-        ? "🔥 Day completed successfully"
-        : "⚠️ Day ended below target"
-    }
-
-    res.json(summary)
-
-  } catch (err) {
-    console.error("END DAY ERROR:", err)
-    res.status(500).json({ message: "Failed to end day" })
-  }
-}

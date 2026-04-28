@@ -2,12 +2,26 @@
 import Season from "../models/Season.js"
 import DailyEntry from "../models/DailyEntry.js"
 import { DEV_USER_ID } from "../config/devUser.js"
+import DailySummary from "../models/DailySummary.js"
 
 export const getDashboard = async (req, res) => {
   try {
-    const userId = "DEV_USER_ID"
+    const userId = DEV_USER_ID
 
-    const season = await Season.findOne({ userId: DEV_USER_ID })
+    const season = await Season.findOne({ userId })
+
+    const todayStr = new Date().toDateString()
+
+    // ✅ check if day already completed
+    let todaySummary = null
+
+    if (season) {
+      todaySummary = await DailySummary.findOne({
+        userId,
+        seasonId: season._id,
+        date: todayStr
+      })
+    }
 
     if (!season) {
       return res.json({
@@ -27,14 +41,11 @@ export const getDashboard = async (req, res) => {
     }
 
     const entries = await DailyEntry.find({
-      // userId: DEV_USER_ID,
       seasonId: season._id
     })
 
-    const todayStr = new Date().toDateString()
-
     const todayEntries = entries.filter(
-      e => e.date && new Date(e.date).toDateString() === todayStr
+      e => new Date(e.date).toDateString() === todayStr
     )
 
     const todaySales = todayEntries.reduce(
@@ -76,7 +87,7 @@ export const getDashboard = async (req, res) => {
         : "Start your streak today"
 
     return res.json({
-      hasSeason: !!season,
+      hasSeason: true,
       todayTarget,
       todaySales,
       todayDifference,
@@ -89,7 +100,7 @@ export const getDashboard = async (req, res) => {
         ? "You're ahead — maintain pace"
         : `You need $${remainingToday.toFixed(0)} more today`,
       isOnTrackToday,
-      isDayCompleted: false,
+      isDayCompleted: !!todaySummary, // 🔥 THIS is the lock
       entries
     })
   } catch (err) {
@@ -98,4 +109,3 @@ export const getDashboard = async (req, res) => {
   }
 }
 
-export { endDay } from "./entryController.js"

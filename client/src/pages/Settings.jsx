@@ -31,7 +31,9 @@ const Settings = () => {
     } catch (err) {
       console.error(err)
     }
-    useEffect(() => {
+  }
+  
+  useEffect(() => {
     axios.get("/season").then(res => {
       setForm({
         incomeGoal: res.data.incomeGoal,
@@ -40,8 +42,6 @@ const Settings = () => {
       })
     })
   }, [])
-  }
-  
 
   return (
     <Box sx={{ p: 2 }}>
