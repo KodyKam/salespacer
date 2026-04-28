@@ -1,4 +1,4 @@
-// client/src/components/FloatingAddSale.jsx
+// client/src/components/AddSaleSheet.jsx
 import { Drawer, Box, Button, TextField, Typography } from "@mui/material"
 import { useState } from "react"
 import axios from "../api/axios"
@@ -6,6 +6,7 @@ import axios from "../api/axios"
 const AddSaleSheet = ({ open, onClose, onSuccess }) => {
   const [value, setValue] = useState("")
   const [loading, setLoading] = useState(false)
+
 
   const handleSubmit = async () => {
     if (!value) return
@@ -57,4 +58,4 @@ const AddSaleSheet = ({ open, onClose, onSuccess }) => {
   )
 }
 
-export default AddSaleSheet
+export default AddSaleSheeta

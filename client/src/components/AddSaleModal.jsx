@@ -5,6 +5,11 @@ import axios from "../api/axios"
 const AddSaleModal = ({ onSuccess }) => {
   const [value, setValue] = useState("")
 
+  if (!hasSeason) {
+  alert("Create a season first")
+  return
+}
+
   const handleAdd = async () => {
     if (!value) return
 

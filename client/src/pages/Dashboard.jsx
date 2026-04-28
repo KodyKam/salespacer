@@ -1,5 +1,4 @@
 // client/src/pages/Dashboard.jsx
-// client/src/pages/Dashboard.jsx
 import { useDashboard } from "../hooks/useDashboard"
 import DayActionsBar from "../components/DayActionsBar"
 import StatsModal from "../components/StatsModal"
@@ -18,56 +17,12 @@ const Dashboard = () => {
   const [scrolled, setScrolled] = useState(false)
   const [toast, setToast] = useState({ open: false, amount: 0 })
 
-  // scroll shrink header
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
+
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-
-  // loading state
-  if (!data) return <p style={{ padding: 16 }}>Loading...</p>
-
-  const safe = {
-    todaySales: Number(data?.todaySales ?? 0),
-    todayTarget: Number(data?.todayTarget ?? 0),
-    todayDifference: Number(data?.todayDifference ?? 0),
-    dailyProgressPercent: Number(data?.dailyProgressPercent ?? 0),
-    remainingToday: Number(data?.remainingToday ?? 0),
-    streakStatus: data?.streakStatus ?? "",
-    nextAction: data?.nextAction ?? "",
-    isOnTrackToday: data?.isOnTrackToday ?? true,
-    isDayCompleted: data?.isDayCompleted ?? false,
-    entries: data?.entries ?? []
-  }
-
-  const isComplete = safe.todaySales >= safe.todayTarget
-  const hasSeason = safe.nextAction !== "Create a season to begin"
-
-  // 🚨 ONBOARDING GUARD (KEY SaaS FIX)
-  if (!hasSeason) {
-    return (
-      <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
-        <Card sx={{ p: 4, textAlign: "center", maxWidth: 420 }}>
-          <Typography variant="h5" fontWeight="bold">
-            Welcome to SalesPacer
-          </Typography>
-
-          <Typography sx={{ mt: 1, opacity: 0.7 }}>
-            You need to create your first season before tracking sales.
-          </Typography>
-
-          <Button
-            variant="contained"
-            sx={{ mt: 3 }}
-            onClick={() => navigate("/setup")}
-          >
-            Create Season
-          </Button>
-        </Card>
-      </Box>
-    )
-  }
 
   const endDay = async () => {
     try {
@@ -77,6 +32,56 @@ const Dashboard = () => {
       console.error(err)
     }
   }
+
+  if (!data) return <p style={{ padding: 16 }}>Loading...</p>
+
+  const safe = {
+    todaySales: Number(data?.todaySales ?? 0),
+    todayTarget: Number(data?.todayTarget ?? 0),
+    todayDifference: Number(data?.todayDifference ?? 0),
+    dailyProgressPercent: Number(data?.dailyProgressPercent ?? 0),
+    remainingToday: Number(data?.remainingToday ?? 0),
+    streakStatus: data?.streakStatus ?? "",
+    nextAction: data?.nextAction ?? "Make your first sale today",
+    isOnTrackToday: data?.isOnTrackToday ?? true,
+    isDayCompleted: data?.isDayCompleted ?? false,
+    entries: data?.entries ?? []
+  }
+
+  const isComplete = safe.todaySales >= safe.todayTarget
+  const hasSeason = Boolean(data?.seasonId || data?.todayTarget)
+
+if (!data) return <p style={{ padding: 16 }}>Loading...</p>
+
+if (!hasSeason) {
+  return (
+    <Box sx={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      p: 3
+    }}>
+      <Card sx={{ p: 4, textAlign: "center", maxWidth: 420 }}>
+        <Typography variant="h5" fontWeight="bold">
+          Welcome to SalesPacer
+        </Typography>
+
+        <Typography sx={{ mt: 1, opacity: 0.7 }}>
+          Let’s set your income target and start tracking.
+        </Typography>
+
+        <Button
+          variant="contained"
+          sx={{ mt: 3 }}
+          onClick={() => navigate("/setup")}
+        >
+          Create Your First Season
+        </Button>
+      </Card>
+    </Box>
+  )
+}
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f6f7fb", pb: 10 }}>
@@ -111,24 +116,27 @@ const Dashboard = () => {
           py: scrolled ? 1 : 2
         }}>
           <Box
-            component="img"
-            src="/logo.png"
-            sx={{
-              width: scrolled ? 36 : 70,
-              height: scrolled ? 36 : 70,
-              transition: "all 0.25s ease",
-              borderRadius: 2
-            }}
-          />
+  component="img"
+  src="/logo.png"
+  alt="SalesPacer Logo"
+  sx={{
+    width: scrolled ? 36 : 70,
+    height: scrolled ? 36 : 70,
+    transition: "all 0.25s ease",
+    borderRadius: 2
+  }}
+/>
 
-          <Typography
-            fontWeight="bold"
-            sx={{
-              fontSize: scrolled ? "1rem" : "1.25rem"
-            }}
-          >
-            SalesPacer
-          </Typography>
+<Typography
+  variant="h5"
+  fontWeight="bold"
+  sx={{
+    fontSize: scrolled ? "1rem" : "1.25rem",
+    transition: "all 0.25s ease"
+  }}
+>
+  🔥 Sales Pacer 🔥
+</Typography>
         </Box>
       </Box>
 
@@ -196,8 +204,8 @@ const Dashboard = () => {
       {/* ADD SALE (GATED) */}
       <FloatingAddSale
         disabled={safe.isDayCompleted || !hasSeason}
-        onSuccess={(amount) => {
-          refresh()
+        onSuccess={ async (amount) => {
+         await refresh()
           setToast({ open: true, amount })
         }}
       />

@@ -1,12 +1,13 @@
 // server/controllers/dashboardController.js
 import Season from "../models/Season.js"
 import DailyEntry from "../models/DailyEntry.js"
+import { DEV_USER_ID } from "../config/devUser.js"
 
 export const getDashboard = async (req, res) => {
   try {
-    const userId = req.user.id
+    const userId = "DEV_USER_ID"
 
-    const season = await Season.findOne({ userId })
+    const season = await Season.findOne({ userId: DEV_USER_ID })
 
     if (!season) {
       return res.json({
@@ -26,7 +27,7 @@ export const getDashboard = async (req, res) => {
     }
 
     const entries = await DailyEntry.find({
-      userId,
+      // userId: DEV_USER_ID,
       seasonId: season._id
     })
 
@@ -75,6 +76,7 @@ export const getDashboard = async (req, res) => {
         : "Start your streak today"
 
     return res.json({
+      hasSeason: !!season,
       todayTarget,
       todaySales,
       todayDifference,

@@ -62,7 +62,7 @@ export const createCheckoutSession = async (req, res) => {
     ],
 
     metadata: {
-      userId: req.user.id
+      userId: "dev-user-123"
     },
 
     success_url: `${process.env.CLIENT_URL}/success`,

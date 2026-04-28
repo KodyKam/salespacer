@@ -9,7 +9,7 @@ import { protect } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-router.post("/create-checkout-session", protect, createCheckoutSession)
+router.post("/create-checkout-session", createCheckoutSession)
 
 router.post("/webhook", handleWebhook)
 

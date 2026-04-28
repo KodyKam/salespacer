@@ -5,6 +5,6 @@ import { protect } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-router.post("/create", protect, createSeason)
+router.post("/", createSeason) //protect temporarily removed for testing
 
 export default router
