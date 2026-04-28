@@ -1,3 +1,4 @@
+// client/src/pages/DaySummary.jsx
 import { useLocation, useNavigate } from "react-router-dom"
 import { Box, Card, Typography, Button } from "@mui/material"
 
@@ -11,7 +12,52 @@ const DaySummary = () => {
     return <p style={{ padding: 20 }}>No summary found</p>
   }
 
-  const isWin = summary.difference >= 0
+  // 🛡 SAFE NUMBER NORMALIZATION (CRITICAL FIX)
+  const num = (v) => {
+    const n = Number(v)
+    return isNaN(n) ? 0 : n
+  }
+
+  const sales = num(summary.todaySales)
+  const target = num(summary.todayTarget)
+
+  // 🚨 FIX: NEVER TRUST RAW DIFFERENCE WITHOUT FALLBACK
+  const diff = num(
+    summary.difference ?? (sales - target)
+  )
+
+  const absDiff = Math.abs(diff)
+  const isWin = diff >= 0
+
+  const performanceRatio = target > 0 ? sales / target : 0
+
+  // 🧠 MESSAGE LOGIC (CLEAN + CONSISTENT)
+  const getMessage = () => {
+    if (isWin && performanceRatio >= 1.2) {
+      return `🔥 You crushed your target by $${diff.toFixed(0)} — elite performance`
+    }
+
+    if (isWin) {
+      return `✅ You beat your target by $${diff.toFixed(0)} — solid day`
+    }
+
+    if (!isWin && performanceRatio >= 0.9) {
+      return `⚡ So close — only $${absDiff.toFixed(0)} away from your target`
+    }
+
+    if (!isWin && performanceRatio >= 0.75) {
+      return `📊 You missed your target by $${absDiff.toFixed(0)} — you're in striking distance`
+    }
+
+    return `📉 You missed your target by $${absDiff.toFixed(0)} — tomorrow is a reset opportunity`
+  }
+
+  const getTitle = () => {
+    if (isWin && performanceRatio >= 1.2) return "🔥 Elite Day!"
+    if (isWin) return "🎉 Strong Finish!"
+    if (performanceRatio >= 0.9) return "⚡ Very Close Day"
+    return "📊 Day Complete"
+  }
 
   return (
     <Box
@@ -25,36 +71,34 @@ const DaySummary = () => {
       }}
     >
       <Card sx={{ p: 3, width: "100%", borderRadius: 4, textAlign: "center" }}>
-        
+
         <Typography variant="h5" fontWeight="bold">
-          {isWin ? "🎉 Day Complete!" : "📉 Day Finished"}
+          {getTitle()}
         </Typography>
 
         <Typography sx={{ mt: 2 }}>
-          Sales: ${summary.todaySales}
+          Sales: ${sales.toFixed(0)}
         </Typography>
 
         <Typography>
-          Target: ${summary.todayTarget}
+          Target: ${target.toFixed(0)}
         </Typography>
 
         <Typography
           sx={{
             mt: 2,
             fontWeight: "bold",
-            color: isWin ? "green" : "red"
+            color: isWin ? "green" : "orange"
           }}
         >
-          {isWin
-            ? `You beat your goal by $${summary.difference}`
-            : `You were $${Math.abs(summary.difference)} behind`}
+          {getMessage()}
         </Typography>
 
         <Typography sx={{ mt: 2 }}>
-          🔥 Streak: {summary.streak} days
+          🔥 Streak: {summary.streak || 0} days
         </Typography>
 
-        <Typography sx={{ mt: 2, fontStyle: "italic" }}>
+        <Typography sx={{ mt: 2, fontStyle: "italic", opacity: 0.8 }}>
           {summary.message || "Keep building momentum."}
         </Typography>
 

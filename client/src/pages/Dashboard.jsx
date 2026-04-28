@@ -19,7 +19,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
-
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
@@ -27,6 +26,9 @@ const Dashboard = () => {
   const endDay = async () => {
     try {
       const res = await axios.post("/day/end")
+
+      console.log("🔥 END DAY RESPONSE:", res.data)
+
       navigate("/day-summary", { state: { summary: res.data } })
     } catch (err) {
       console.error(err)
@@ -51,50 +53,38 @@ const Dashboard = () => {
   const isComplete = safe.todaySales >= safe.todayTarget
   const hasSeason = Boolean(data?.seasonId || data?.todayTarget)
 
-if (!data) return <p style={{ padding: 16 }}>Loading...</p>
+  if (!hasSeason) {
+    return (
+      <Box sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 3
+      }}>
+        <Card sx={{ p: 4, textAlign: "center", maxWidth: 420 }}>
+          <Typography variant="h5" fontWeight="bold">
+            Welcome to SalesPacer
+          </Typography>
 
-if (!hasSeason) {
-  return (
-    <Box sx={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      p: 3
-    }}>
-      <Card sx={{ p: 4, textAlign: "center", maxWidth: 420 }}>
-        <Typography variant="h5" fontWeight="bold">
-          Welcome to SalesPacer
-        </Typography>
+          <Typography sx={{ mt: 1, opacity: 0.7 }}>
+            Let’s set your income target and start tracking.
+          </Typography>
 
-        <Typography sx={{ mt: 1, opacity: 0.7 }}>
-          Let’s set your income target and start tracking.
-        </Typography>
-
-        <Button
-          variant="contained"
-          sx={{ mt: 3 }}
-          onClick={() => navigate("/setup")}
-        >
-          Create Your First Season
-        </Button>
-      </Card>
-    </Box>
-  )
-}
+          <Button
+            variant="contained"
+            sx={{ mt: 3 }}
+            onClick={() => navigate("/setup")}
+          >
+            Create Your First Season
+          </Button>
+        </Card>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f6f7fb", pb: 10 }}>
-
-      {/* DAY LOCK */}
-      {safe.isDayCompleted && (
-        <Card sx={{ m: 2, p: 2, bgcolor: "#e8f5e9" }}>
-          <Typography fontWeight="bold">🔒 Day locked</Typography>
-          <Typography variant="body2">
-            Come back tomorrow to continue your streak.
-          </Typography>
-        </Card>
-      )}
 
       {/* HEADER */}
       <Box
@@ -116,27 +106,27 @@ if (!hasSeason) {
           py: scrolled ? 1 : 2
         }}>
           <Box
-  component="img"
-  src="/logo.png"
-  alt="SalesPacer Logo"
-  sx={{
-    width: scrolled ? 36 : 70,
-    height: scrolled ? 36 : 70,
-    transition: "all 0.25s ease",
-    borderRadius: 2
-  }}
-/>
+            component="img"
+            src="/logo.png"
+            alt="SalesPacer Logo"
+            sx={{
+              width: scrolled ? 36 : 70,
+              height: scrolled ? 36 : 70,
+              transition: "all 0.25s ease",
+              borderRadius: 2
+            }}
+          />
 
-<Typography
-  variant="h5"
-  fontWeight="bold"
-  sx={{
-    fontSize: scrolled ? "1rem" : "1.25rem",
-    transition: "all 0.25s ease"
-  }}
->
-  🔥 Sales Pacer 🔥
-</Typography>
+          <Typography
+            variant="h5"
+            fontWeight="bold"
+            sx={{
+              fontSize: scrolled ? "1rem" : "1.25rem",
+              transition: "all 0.25s ease"
+            }}
+          >
+            🔥 Sales Pacer 🔥
+          </Typography>
         </Box>
       </Box>
 
@@ -188,24 +178,64 @@ if (!hasSeason) {
           </Typography>
         </Card>
 
-        <Card sx={{ p: 2 }}>
-          <Typography variant="subtitle2">NEXT ACTION</Typography>
-          <Typography fontWeight="bold">
-            👉 {safe.nextAction}
-          </Typography>
-        </Card>
+        {/* ACTION AREA (STATE SWITCH) */}
 
-        <DayActionsBar
-          onEndDay={endDay}
-          disabled={safe.isDayCompleted}
-        />
+{safe.isDayCompleted ? (
+  <Card
+    sx={{
+      p: 3,
+      borderRadius: 3,
+      textAlign: "center",
+      bgcolor: "#e8f5e9",
+      border: "1px solid #c8e6c9"
+    }}
+  >
+    <Typography variant="h6" fontWeight="bold">
+      🔒 Day Complete
+    </Typography>
+
+    <Typography sx={{ mt: 1, opacity: 0.8 }}>
+      Nice work today — everything is locked in.
+    </Typography>
+
+    <Typography sx={{ mt: 2, fontWeight: "bold" }}>
+      Streak: {safe.streak ?? 0} 🔥
+    </Typography>
+
+    <Typography sx={{ mt: 1, fontSize: 13, opacity: 0.7 }}>
+      Come back tomorrow to continue building momentum.
+    </Typography>
+
+    <Button
+      variant="outlined"
+      sx={{ mt: 2 }}
+      onClick={() => navigate("/day-summary", { state: { summary: { ...safe } } })}
+    >
+      View Summary
+    </Button>
+  </Card>
+) : (
+  <>
+    <Card sx={{ p: 2 }}>
+      <Typography variant="subtitle2">NEXT ACTION</Typography>
+      <Typography fontWeight="bold">
+        👉 {safe.nextAction}
+      </Typography>
+    </Card>
+
+    <DayActionsBar
+      onEndDay={endDay}
+      disabled={safe.isDayCompleted}
+    />
+  </>
+)}
       </Stack>
 
-      {/* ADD SALE (GATED) */}
+      {/* ADD SALE */}
       <FloatingAddSale
         disabled={safe.isDayCompleted || !hasSeason}
-        onSuccess={ async (amount) => {
-         await refresh()
+        onSuccess={async (amount) => {
+          await refresh()
           setToast({ open: true, amount })
         }}
       />
