@@ -7,40 +7,29 @@ import ShowChartIcon from "@mui/icons-material/ShowChart"
 import { useNavigate } from "react-router-dom"
 import { useState } from "react"
 
-const BottomNav = ({ onAdd }) => {
+const BottomNav = ({ onAddSale, isDayCompleted }) => {
   const navigate = useNavigate()
   const [value, setValue] = useState(0)
 
   return (
-    <Paper
-      sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
-      elevation={3}
-    >
-      <BottomNavigation
-        value={value}
-        onChange={(e, newValue) => setValue(newValue)}
-      >
+    <Paper sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }} elevation={3}>
+      <BottomNavigation value={value} onChange={(e, v) => setValue(v)}>
         <BottomNavigationAction
           label="Home"
           icon={<HomeIcon />}
           onClick={() => navigate("/")}
         />
-
         <BottomNavigationAction
           label="Add"
           icon={<AddIcon />}
-          onClick={() => {
-            console.log("NAV ADD CLICKED")
-            window.dispatchEvent(new Event("open-add-sale"))
-          }}
+          onClick={onAddSale}
+          disabled={isDayCompleted}
         />
-
         <BottomNavigationAction
           label="Stats"
           icon={<ShowChartIcon />}
           onClick={() => window.dispatchEvent(new Event("open-stats"))}
         />
-
         <BottomNavigationAction
           label="Settings"
           icon={<SettingsIcon />}

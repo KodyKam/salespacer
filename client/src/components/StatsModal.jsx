@@ -24,13 +24,13 @@ const StatsModal = ({ entries = [] }) => {
 
   // group entries by date
   const grouped = entries.reduce((acc, entry) => {
-    const date = new Date(entry.date).toDateString()
-
+    const d = new Date(entry.date)
+    if (isNaN(d.getTime())) return acc  // skip bad dates
+    const date = d.toDateString()
     if (!acc[date]) acc[date] = []
     acc[date].push(entry)
-
     return acc
-  }, {})
+}, {})
 
   const sortedDates = Object.keys(grouped).sort(
     (a, b) => new Date(b) - new Date(a)
@@ -63,7 +63,7 @@ const StatsModal = ({ entries = [] }) => {
                 {grouped[date].map((e, i) => (
                   <ListItem key={i}>
                     <ListItemText
-                      primary={`$${e.salesVolume}`}
+                      primary={`$${Number(e.salesVolume || 0).toFixed(0)}`}
                       secondary={new Date(e.date).toLocaleTimeString()}
                     />
                   </ListItem>

@@ -9,6 +9,8 @@ import FloatingAddSale from "../components/FloatingAddSale"
 import axios from "../api/axios"
 import { useState, useEffect } from "react"
 import { Snackbar, Alert } from "@mui/material"
+import LogoutIcon from "@mui/icons-material/Logout"
+import { IconButton } from "@mui/material"
 
 const Dashboard = () => {
   const { data, refresh } = useDashboard()
@@ -16,26 +18,64 @@ const Dashboard = () => {
 
   const [scrolled, setScrolled] = useState(false)
   const [toast, setToast] = useState({ open: false, amount: 0 })
+  const [openAdd, setOpenAdd] = useState(false)
 
+  // Add scroll listener
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const isDayCompleted = data?.isDayCompleted ?? false
+
+  const startNewDay = async () => {
+    try {
+      await axios.post("/day/start")
+      await refresh()
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to start new day")
+    }
+  }
 
   const endDay = async () => {
     try {
       const res = await axios.post("/day/end")
 
-      console.log("🔥 END DAY RESPONSE:", res.data)
+      const summary = {
+        ...res.data,
+        timestamp: new Date().toISOString()
+      }
 
-      navigate("/day-summary", { state: { summary: res.data } })
+      await refresh()
+
+      navigate("/day-summary", {
+        state: { summary }
+      })
+
+      return true
+
     } catch (err) {
-      console.error(err)
+      console.error("END DAY FAILED:", err)
+
+      alert(
+        err?.response?.data?.message ||
+        "Failed to end day. Try again."
+      )
+
+      return false
     }
   }
 
-  if (!data) return <p style={{ padding: 16 }}>Loading...</p>
+  const loading = data === undefined
+
+  if (loading) return <p>Loading...</p>
+
+  if (data === null) {
+    return <p>Server error / auth issue</p>
+  }
 
   const safe = {
     todaySales: Number(data?.todaySales ?? 0),
@@ -47,7 +87,8 @@ const Dashboard = () => {
     nextAction: data?.nextAction ?? "Make your first sale today",
     isOnTrackToday: data?.isOnTrackToday ?? true,
     isDayCompleted: data?.isDayCompleted ?? false,
-    entries: data?.entries ?? []
+    entries: data?.entries ?? [],
+    streak: data?.streak ?? 0
   }
 
   const isComplete = safe.todaySales >= safe.todayTarget
@@ -68,7 +109,7 @@ const Dashboard = () => {
           </Typography>
 
           <Typography sx={{ mt: 1, opacity: 0.7 }}>
-            Let’s set your income target and start tracking.
+            Let's set your income target and start tracking.
           </Typography>
 
           <Button
@@ -88,47 +129,60 @@ const Dashboard = () => {
 
       {/* HEADER */}
       <Box
+  sx={{
+    position: "sticky",
+    top: 0,
+    zIndex: 1000,
+    transition: "all 0.25s ease",
+    backdropFilter: scrolled ? "blur(8px)" : "none",
+    backgroundColor: scrolled ? "rgba(246,247,251,0.85)" : "transparent",
+    boxShadow: scrolled ? "0 4px 12px rgba(0,0,0,0.08)" : "none"
+  }}
+>
+  <Box sx={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    px: 2,
+    py: scrolled ? 1 : 2
+  }}>
+    <Box sx={{ width: 40 }} /> {/* spacer for centering */}
+
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box
+        component="img"
+        src="/logo.png"
+        alt="SalesPacer Logo"
         sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
+          width: scrolled ? 28 : 48,
+          height: scrolled ? 28 : 48,
           transition: "all 0.25s ease",
-          backdropFilter: scrolled ? "blur(8px)" : "none",
-          backgroundColor: scrolled ? "rgba(246,247,251,0.85)" : "transparent",
-          boxShadow: scrolled ? "0 4px 12px rgba(0,0,0,0.08)" : "none"
+          borderRadius: 2
+        }}
+      />
+      <Typography
+        variant="h5"
+        fontWeight="bold"
+        sx={{
+          fontSize: scrolled ? "1rem" : "1.25rem",
+          transition: "all 0.25s ease"
         }}
       >
-        <Box sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 1.5,
-          py: scrolled ? 1 : 2
-        }}>
-          <Box
-            component="img"
-            src="/logo.png"
-            alt="SalesPacer Logo"
-            sx={{
-              width: scrolled ? 36 : 70,
-              height: scrolled ? 36 : 70,
-              transition: "all 0.25s ease",
-              borderRadius: 2
-            }}
-          />
+        🔥 Sales Pacer 🔥
+      </Typography>
+    </Box>
 
-          <Typography
-            variant="h5"
-            fontWeight="bold"
-            sx={{
-              fontSize: scrolled ? "1rem" : "1.25rem",
-              transition: "all 0.25s ease"
-            }}
-          >
-            🔥 Sales Pacer 🔥
-          </Typography>
-        </Box>
-      </Box>
+    <IconButton
+      onClick={() => {
+        localStorage.removeItem("token")
+        window.location.href = "/welcome"
+      }}
+      sx={{ color: "text.secondary" }}
+    >
+      <LogoutIcon fontSize="small" />
+    </IconButton>
+  </Box>
+</Box>
 
       {/* MAIN */}
       <Stack spacing={2} sx={{ px: 2, mt: 2 }}>
@@ -179,8 +233,7 @@ const Dashboard = () => {
         </Card>
 
         {/* ACTION AREA (STATE SWITCH) */}
-
-{safe.isDayCompleted ? (
+        {safe.isDayCompleted ? (
   <Card
     sx={{
       p: 3,
@@ -199,20 +252,31 @@ const Dashboard = () => {
     </Typography>
 
     <Typography sx={{ mt: 2, fontWeight: "bold" }}>
-      Streak: {safe.streak ?? 0} 🔥
-    </Typography>
-
-    <Typography sx={{ mt: 1, fontSize: 13, opacity: 0.7 }}>
-      Come back tomorrow to continue building momentum.
+      Streak: {safe.streak} 🔥
     </Typography>
 
     <Button
       variant="outlined"
-      sx={{ mt: 2 }}
+      sx={{ mt: 2, mr: 1 }}
       onClick={() => navigate("/day-summary", { state: { summary: { ...safe } } })}
     >
       View Summary
     </Button>
+
+    <Button
+      variant="contained"
+      sx={{ mt: 2 }}
+      onClick={async () => {
+        await startNewDay()
+        await refresh()
+      }}
+    >
+      + Forgot a Sale?
+    </Button>
+
+    <Typography sx={{ mt: 2, fontSize: 12, opacity: 0.6 }}>
+      Unlocking will let you add missed sales to today's total.
+    </Typography>
   </Card>
 ) : (
   <>
@@ -233,14 +297,22 @@ const Dashboard = () => {
 
       {/* ADD SALE */}
       <FloatingAddSale
-        disabled={safe.isDayCompleted || !hasSeason}
-        onSuccess={async (amount) => {
-          await refresh()
-          setToast({ open: true, amount })
-        }}
-      />
+  open={openAdd}
+  onOpen={() => setOpenAdd(true)}
+  onClose={() => setOpenAdd(false)}
+  disabled={safe.isDayCompleted || !hasSeason}
+  onSuccess={async (amount) => {
+    setOpenAdd(false)
+    await refresh()
+    setToast({ open: true, amount })
+  }}
+/>
 
-      <BottomNav />
+      <BottomNav
+        isDayCompleted={safe.isDayCompleted}
+        onAddSale={() => setOpenAdd(true)}
+        onStartDay={startNewDay}
+      />
 
       {/* TOAST */}
       <Snackbar

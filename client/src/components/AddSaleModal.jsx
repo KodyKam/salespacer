@@ -2,15 +2,13 @@
 import { useState } from "react"
 import axios from "../api/axios"
 
-const AddSaleModal = ({ onSuccess }) => {
+const AddSaleModal = ({ onSuccess, hasSeason }) => {
   const [value, setValue] = useState("")
-  
-  const AddSaleModal = ({ onSuccess, hasSeason })
 
   if (!hasSeason) {
-  alert("Create a season first")
-  return
-}
+    alert("Create a season first")
+    return null
+  }
 
   const handleAdd = async () => {
     if (!value) return

@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react"
 import axios from "../api/axios"
 
 export const useDashboard = () => {
-  const [data, setData] = useState(null)
+  const [data, setData] = useState(undefined)
   const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
@@ -23,9 +23,11 @@ export const useDashboard = () => {
     fetchData()
   }, [fetchData])
 
-  return {
-    data,
-    loading,
-    refresh: fetchData
-  }
+  useEffect(() => {
+    const refreshHandler = () => fetchData()
+    window.addEventListener("refresh-dashboard", refreshHandler)
+    return () => window.removeEventListener("refresh-dashboard", refreshHandler)
+  }, [fetchData])
+
+  return { data, loading, refresh: fetchData }
 }

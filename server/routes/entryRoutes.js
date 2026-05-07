@@ -7,6 +7,5 @@ import { protect } from "../middleware/authMiddleware.js"
 const router = express.Router()
 
 router.post("/", protect, addEntry)
-// router.post("/end-day", protect, endDay)
 
 export default router

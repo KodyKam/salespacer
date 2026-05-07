@@ -8,9 +8,7 @@ const SeasonSchema = new mongoose.Schema(
       required: true
     },
 
-    companyName: String,
-
-    incomeGoal: {
+    requiredVolume: {
       type: Number,
       required: true
     },
@@ -21,11 +19,6 @@ const SeasonSchema = new mongoose.Schema(
     },
 
     totalWorkDays: {
-      type: Number,
-      required: true
-    },
-
-    requiredVolume: {
       type: Number,
       required: true
     },

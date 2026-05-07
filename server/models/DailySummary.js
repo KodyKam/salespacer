@@ -6,7 +6,7 @@ const DailySummarySchema = new mongoose.Schema(
     userId: { type: String, required: true },
     seasonId: { type: mongoose.Schema.Types.ObjectId, ref: "Season" },
 
-    date: { type: String, required: true }, // "2026-04-24"
+    date: { type: Date, required: true }, // "2026-04-24"
 
     sales: { type: Number, default: 0 },
     target: { type: Number, default: 0 },

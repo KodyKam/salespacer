@@ -1,10 +1,12 @@
 // server/routes/seasonRoutes.js
 import express from "express"
-import { createSeason } from "../controllers/seasonController.js"
+import { createSeason, getSeason, updateSeason, deleteSeason } from "../controllers/seasonController.js"
 import { protect } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-router.post("/", createSeason) //protect temporarily removed for testing
-
+router.post("/", protect, createSeason)
+router.get("/", protect, getSeason)
+router.put("/update", protect, updateSeason)
+router.delete("/", protect, deleteSeason)
 export default router

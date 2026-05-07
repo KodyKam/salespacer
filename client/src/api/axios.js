@@ -7,4 +7,32 @@ const instance = axios.create({
     : "https://salespacer.onrender.com/api"
 })
 
+// ✅ REQUEST INTERCEPTOR (attach token)
+instance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token")
+
+  console.log("TOKEN BEING SENT:", token)
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
+
+// ✅ RESPONSE INTERCEPTOR (handle 401)
+instance.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      console.warn("401 detected → redirecting to login")
+
+      localStorage.removeItem("token")
+      window.location.href = "/login"
+    }
+
+    return Promise.reject(err)
+  }
+)
+
 export default instance

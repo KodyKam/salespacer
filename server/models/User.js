@@ -3,16 +3,15 @@ import mongoose from "mongoose"
 
 const UserSchema = new mongoose.Schema(
   {
-    name: String,
-    email: { type: String, unique: true },
-    password: String,
-
-    subscriptionStatus: {
+    email: {
       type: String,
-      default: "inactive"
+      required: true,
+      unique: true
     },
-
-    stripeCustomerId: String
+    password: {
+      type: String,
+      required: true
+    }
   },
   { timestamps: true }
 )

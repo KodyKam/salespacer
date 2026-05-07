@@ -58,4 +58,4 @@ const AddSaleSheet = ({ open, onClose, onSuccess }) => {
   )
 }
 
-export default AddSaleSheeta
+export default AddSaleSheet

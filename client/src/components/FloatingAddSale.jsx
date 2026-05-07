@@ -1,88 +1,71 @@
 // client/src/components/FloatingAddSale.jsx
-import {
-  Drawer,
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Fab
-} from "@mui/material"
+import { Drawer, Box, Button, TextField, Typography, Fab } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import axios from "../api/axios"
 
-const FloatingAddSale = ({ onSuccess, disabled }) => {
-  const [open, setOpen] = useState(false)
+
+const FloatingAddSale = ({ onSuccess, disabled, open, onClose, onOpen }) => {
   const [value, setValue] = useState("")
-
-  // ✅ LISTENER MUST LIVE HERE (top-level)
-  useEffect(() => {
-    const openHandler = () => {
-      console.log("EVENT RECEIVED")
-      setOpen(true)
-    }
-
-    window.addEventListener("open-add-sale", openHandler)
-
-    return () => {
-      window.removeEventListener("open-add-sale", openHandler)
-    }
-  }, [])
 
   const handleSubmit = async () => {
     if (!value) return
-
     try {
-      await axios.post("/entry", {
-        salesVolume: Number(value)
-      })
-
+      await axios.post("/entry", { salesVolume: Number(value) })
       setValue("")
-      setOpen(false)
-
+      onClose?.()
       onSuccess?.(Number(value))
     } catch (err) {
       console.error("Add sale failed:", err)
+      alert(err.response?.data?.message || "Sale blocked")
     }
+  }
+
+  const handleClose = () => {
+    setValue("")
+    onClose?.()
   }
 
   return (
     <>
       <Fab
-        variant="extended"
         color="primary"
-        onClick={() => setOpen(true)}
+        onClick={onOpen}
         disabled={disabled}
         sx={{
           position: "fixed",
-          bottom: 80,
+          bottom: 72,
           right: 16,
           zIndex: 1000
         }}
       >
-        <AddIcon sx={{ mr: 1 }} />
-        Add Sale
+        <AddIcon />
       </Fab>
 
-      <Drawer anchor="bottom" open={open} onClose={() => setOpen(false)}>
+      <Drawer anchor="bottom" open={open} onClose={handleClose}>
         <Box sx={{ p: 3 }}>
-          <Typography variant="h6">Add Sale</Typography>
-
+          <Typography variant="h6" fontWeight="bold">Add Sale</Typography>
+          <Typography variant="body2" sx={{ opacity: 0.6, mb: 2 }}>
+            Enter the sale volume in dollars
+          </Typography>
           <TextField
             fullWidth
             type="number"
+            placeholder="e.g. 5000"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            sx={{ mt: 2 }}
+            autoFocus
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           />
-
           <Button
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2 }}
-            onClick={handleSubmit}
+            fullWidth variant="contained"
+            sx={{ mt: 2 }} onClick={handleSubmit}
+            disabled={disabled || !value}
           >
             Save Sale
+          </Button>
+          <Button fullWidth sx={{ mt: 1 }} onClick={handleClose}>
+            Cancel
           </Button>
         </Box>
       </Drawer>

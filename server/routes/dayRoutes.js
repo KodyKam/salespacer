@@ -1,10 +1,11 @@
 // server/routes/dayRoutes.js
 import express from "express"
-import { endDay } from "../controllers/dayController.js"
+import { endDay, startDay } from "../controllers/dayController.js"
 import { protect } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-router.post("/end", endDay)
+router.post("/end", protect, endDay)
+router.post("/start", protect, startDay)
 
 export default router

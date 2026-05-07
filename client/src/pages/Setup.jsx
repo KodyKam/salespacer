@@ -1,114 +1,87 @@
 // client/src/pages/Setup.jsx
 import { useState } from "react"
-import axios from "../api/axios"
 import { useNavigate } from "react-router-dom"
+import axios from "../api/axios"
+import { Box, Card, TextField, Button, Typography } from "@mui/material"
 
 const Setup = () => {
   const navigate = useNavigate()
-
-  // ✅ SAFE INITIAL STATE
   const [form, setForm] = useState({
-    companyName: "",
-    incomeGoal: Number(""),
+    requiredVolume: "",
     commissionRate: "",
     totalWorkDays: ""
   })
-
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  // ✅ HANDLE INPUT
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    })
+    setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  // ✅ SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError("")
 
-    // ✅ VALIDATION (correct place)
-    if (
-      !form.companyName ||
-      !form.incomeGoal ||
-      !form.commissionRate ||
-      !form.totalWorkDays
-    ) {
-      alert("Please fill all fields")
+    const payload = {
+      requiredVolume: Number(form.requiredVolume),
+      commissionRate: Number(form.commissionRate) / 100,
+      totalWorkDays: Number(form.totalWorkDays)
+    }
+
+    if (!payload.requiredVolume || !payload.commissionRate || !payload.totalWorkDays) {
+      setError("Please fill in all fields")
       return
     }
 
     try {
       setLoading(true)
-
-      await axios.post("/season", {
-        companyName: form.companyName,
-        incomeGoal: Number(form.incomeGoal),
-        commissionRate: Number(form.commissionRate) / 100, // ✅ FIXED
-        totalWorkDays: Number(form.totalWorkDays)
-      })
-
+      await axios.post("/season", payload)
       navigate("/")
-      window.location.reload()
     } catch (err) {
-      console.error("Create season failed:", err)
-      alert("Failed to create season")
+      setError(err.response?.data?.message || "Setup failed")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Setup Your Season</h1>
-
-      <form onSubmit={handleSubmit}>
-        <input
-          name="companyName"
-          placeholder="Company Name"
-          value={form.companyName}
-          onChange={handleChange}
-        />
-
-        <br /><br />
-
-        <input
-          name="incomeGoal"
-          placeholder="Income Goal ($)"
-          type="number"
-          value={form.incomeGoal}
-          onChange={handleChange}
-        />
-
-        <br /><br />
-
-        <input
-          name="commissionRate"
-          placeholder="Commission Rate (%)"
-          type="number"
-          step="0.01"
-          value={form.commissionRate}
-          onChange={handleChange}
-        />
-
-        <br /><br />
-
-        <input
-          name="totalWorkDays"
-          placeholder="Number of Work Days"
-          type="number"
-          value={form.totalWorkDays}
-          onChange={handleChange}
-        />
-
-        <br /><br />
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create Season"}
-        </button>
-      </form>
-    </div>
+    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", p: 2 }}>
+      <Card sx={{ p: 4, width: "100%", maxWidth: 420, borderRadius: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+          <Box component="img" src="/logo.png" alt="SalesPacer" sx={{ width: 64, borderRadius: 2 }} />
+        </Box>
+        <Typography variant="h5" fontWeight="bold" sx={{ textAlign: "center" }}>
+          Set Up Your Season
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1, mb: 3, opacity: 0.6, textAlign: "center" }}>
+          Define your income goal and we'll pace you to it.
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth label="Income Goal ($)" name="requiredVolume"
+            type="number" value={form.requiredVolume}
+            onChange={handleChange} sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth label="Commission Rate (%)" name="commissionRate"
+            type="number" inputProps={{ step: "0.01" }}
+            value={form.commissionRate} onChange={handleChange}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth label="Number of Work Days" name="totalWorkDays"
+            type="number" value={form.totalWorkDays}
+            onChange={handleChange} sx={{ mb: 2 }}
+          />
+          {error && (
+            <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>
+          )}
+          <Button fullWidth variant="contained" type="submit" disabled={loading} size="large">
+            {loading ? "Creating..." : "Let's Go"}
+          </Button>
+        </form>
+      </Card>
+    </Box>
   )
 }
 

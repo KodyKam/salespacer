@@ -1,98 +1,110 @@
 // client/src/pages/Settings.jsx
 import { useState, useEffect } from "react"
-import axios from "../api/axios"
 import { useNavigate } from "react-router-dom"
-import { Box, TextField, Button, Typography, IconButton } from "@mui/material"
+import axios from "../api/axios"
+import { Box, TextField, Button, Typography, IconButton, Divider } from "@mui/material"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 
 const Settings = () => {
   const navigate = useNavigate()
-
   const [form, setForm] = useState({
-    incomeGoal: "",
+    requiredVolume: "",
     commissionRate: "",
     totalWorkDays: ""
   })
+  const [loading, setLoading] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    axios.get("/season").then(res => {
+      setForm({
+        requiredVolume: res.data.requiredVolume,
+        commissionRate: (res.data.commissionRate * 100).toFixed(2),
+        totalWorkDays: res.data.totalWorkDays
+      })
+    }).catch(() => {})
+  }, [])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
   const handleSave = async () => {
+    setError("")
     try {
+      setLoading(true)
       await axios.put("/season/update", {
-        ...form,
-        incomeGoal: Number(form.incomeGoal),
+        requiredVolume: Number(form.requiredVolume),
         commissionRate: Number(form.commissionRate),
         totalWorkDays: Number(form.totalWorkDays)
       })
-
-      navigate("/")
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      console.error(err)
+      setError(err.response?.data?.message || "Save failed")
+    } finally {
+      setLoading(false)
     }
   }
-  
-  useEffect(() => {
-    axios.get("/season").then(res => {
-      setForm({
-        incomeGoal: res.data.incomeGoal,
-        commissionRate: res.data.commissionRate * 100,
-        totalWorkDays: res.data.totalWorkDays
-      })
-    })
-  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    navigate("/login")
+  }
 
   return (
-    <Box sx={{ p: 2 }}>
-      {/* HEADER */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+    <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
         <IconButton onClick={() => navigate("/")}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h6">Settings</Typography>
+        <Typography variant="h6" fontWeight="bold">Settings</Typography>
       </Box>
 
-      <TextField
-        fullWidth
-        label="Income Goal"
-        name="incomeGoal"
-        onChange={handleChange}
-        sx={{ mb: 2 }}
-      />
+      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>SEASON GOALS</Typography>
 
       <TextField
-        fullWidth
-        label="Commission Rate"
-        name="commissionRate"
-        onChange={handleChange}
-        sx={{ mb: 2 }}
+        fullWidth label="Income Goal ($)" name="requiredVolume"
+        type="number" value={form.requiredVolume}
+        onChange={handleChange} sx={{ mb: 2 }}
       />
-
       <TextField
-        fullWidth
-        label="Work Days"
-        name="totalWorkDays"
-        onChange={handleChange}
+        fullWidth label="Commission Rate (%)" name="commissionRate"
+        type="number" slotProps={{ input: { step: "0.01" } }}
+        value={form.commissionRate} onChange={handleChange}
         sx={{ mb: 2 }}
       />
+      <TextField
+        fullWidth label="Work Days" name="totalWorkDays"
+        type="number" value={form.totalWorkDays}
+        onChange={handleChange} sx={{ mb: 2 }}
+      />
 
-      <Button fullWidth variant="contained" onClick={handleSave}>
-        Save Changes
+      {error && <Typography color="error" sx={{ mb: 1 }}>{error}</Typography>}
+
+      <Button fullWidth variant="contained" onClick={handleSave} disabled={loading} sx={{ mb: 1 }}>
+        {saved ? "✅ Saved!" : loading ? "Saving..." : "Save Changes"}
       </Button>
 
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>DANGER ZONE</Typography>
+
       <Button
-        color="error"
-        fullWidth
-        sx={{ mt: 2 }}
+        fullWidth color="error" variant="outlined" sx={{ mb: 2 }}
         onClick={async () => {
-          if (confirm("This will delete all progress. Continue?")) {
+          if (confirm("This will delete all your progress. Are you sure?")) {
             await axios.delete("/season")
             navigate("/setup")
           }
         }}
       >
         Reset Season
+      </Button>
+
+      <Button fullWidth color="warning" variant="outlined" onClick={handleLogout}>
+        Logout
       </Button>
     </Box>
   )

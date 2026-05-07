@@ -7,6 +7,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js"
 import seasonRoutes from "./routes/seasonRoutes.js"
 import entryRoutes from "./routes/entryRoutes.js"
 import dayRoutes from "./routes/dayRoutes.js"
+import authRoutes from "./routes/authRoutes.js"
 
 const app = express()
 
@@ -17,12 +18,14 @@ app.use(cors({
     "http://localhost:3000",
     "https://salespacer.vercel.app"
   ],
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"]
 }))
 
 app.use(express.json())
 
 // routes
+app.use("/api/auth", authRoutes)
 app.use("/api/billing", billingRoutes)
 app.use("/api/dashboard", dashboardRoutes)
 app.use("/api/season", seasonRoutes)

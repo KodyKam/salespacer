@@ -1,16 +1,45 @@
 // client/src/pages/DaySummary.jsx
 import { useLocation, useNavigate } from "react-router-dom"
 import { Box, Card, Typography, Button } from "@mui/material"
+import { useEffect, useState } from "react"
+import axios from "../api/axios"
 
 const DaySummary = () => {
-  const { state } = useLocation()
+  const location = useLocation()
   const navigate = useNavigate()
 
-  const summary = state?.summary
+  const [summary, setSummary] = useState(location.state?.summary || null)
+
+  // 🔥 fallback if state missing (refresh-safe)
+  useEffect(() => {
+    if (!summary) {
+      axios.get("/dashboard")
+        .then(res => {
+          if (res.data?.isDayCompleted) {
+            setSummary({
+              todaySales: res.data.todaySales,
+              todayTarget: res.data.todayTarget,
+              difference: res.data.todayDifference,
+              streak: res.data.streak,
+              message: "Loaded from server"
+            })
+          }
+        })
+        .catch(() => {})
+    }
+  }, [summary])
 
   if (!summary) {
-    return <p style={{ padding: 20 }}>No summary found</p>
-  }
+  return (
+    <Box sx={{ p: 3, textAlign: "center" }}>
+      <Typography>No summary available.</Typography>
+      <Button onClick={() => navigate("/")} sx={{ mt: 2 }}>
+        Back to Dashboard
+      </Button>
+    </Box>
+  )
+}
+  
 
   // 🛡 SAFE NUMBER NORMALIZATION (CRITICAL FIX)
   const num = (v) => {
