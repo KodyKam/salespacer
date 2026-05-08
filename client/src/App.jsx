@@ -9,6 +9,8 @@ import MainLayout from "./layouts/MainLayout"
 import Landing from "./pages/Landing"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
+import ForgotPassword from "./pages/ForgotPassword"
+import ResetPassword from "./pages/ResetPassword"
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token")
@@ -22,6 +24,8 @@ const App = () => {
         <Route path="/welcome" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={
           <PrivateRoute>
             <MainLayout><Dashboard /></MainLayout>
