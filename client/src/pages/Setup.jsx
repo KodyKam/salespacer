@@ -7,8 +7,9 @@ import { Box, Card, TextField, Button, Typography } from "@mui/material"
 const Setup = () => {
   const navigate = useNavigate()
   const [form, setForm] = useState({
-    requiredVolume: "",
+    incomeGoal: "",
     commissionRate: "",
+    taxRate: "13",
     totalWorkDays: ""
   })
   const [loading, setLoading] = useState(false)
@@ -23,12 +24,13 @@ const Setup = () => {
     setError("")
 
     const payload = {
-      requiredVolume: Number(form.requiredVolume),
-      commissionRate: Number(form.commissionRate) / 100,
+      incomeGoal: Number(form.incomeGoal),
+      commissionRate: Number(form.commissionRate),
+      taxRate: Number(form.taxRate),
       totalWorkDays: Number(form.totalWorkDays)
     }
 
-    if (!payload.requiredVolume || !payload.commissionRate || !payload.totalWorkDays) {
+    if (!payload.incomeGoal || !payload.commissionRate || !payload.taxRate || !payload.totalWorkDays) {
       setError("Please fill in all fields")
       return
     }
@@ -58,14 +60,24 @@ const Setup = () => {
         </Typography>
         <form onSubmit={handleSubmit}>
           <TextField
-            fullWidth label="Income Goal ($)" name="requiredVolume"
-            type="number" value={form.requiredVolume}
+            fullWidth label="Income Goal ($)" name="incomeGoal"
+            type="number" value={form.incomeGoal}
             onChange={handleChange} sx={{ mb: 2 }}
           />
           <TextField
             fullWidth label="Commission Rate (%)" name="commissionRate"
-            type="number" inputProps={{ step: "0.01" }}
-            value={form.commissionRate} onChange={handleChange}
+            type="number"
+            slotProps={{ input: { step: "0.01" } }}
+            value={form.commissionRate}
+            onChange={handleChange} sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth label="Tax Rate (%)" name="taxRate"
+            type="number"
+            slotProps={{ input: { step: "0.01" } }}
+            value={form.taxRate}
+            onChange={handleChange}
+            helperText="e.g. 13 for Ontario HST, 5 for GST only"
             sx={{ mb: 2 }}
           />
           <TextField

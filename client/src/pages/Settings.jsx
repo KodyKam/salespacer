@@ -8,8 +8,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 const Settings = () => {
   const navigate = useNavigate()
   const [form, setForm] = useState({
-    requiredVolume: "",
+    incomeGoal: "",
     commissionRate: "",
+    taxRate: "",
     totalWorkDays: ""
   })
   const [loading, setLoading] = useState(false)
@@ -18,10 +19,14 @@ const Settings = () => {
 
   useEffect(() => {
     axios.get("/season").then(res => {
+      const { requiredVolume, commissionRate, taxRate, totalWorkDays } = res.data
+      // Back-calculate incomeGoal from stored requiredVolume
+      const incomeGoal = requiredVolume * commissionRate / (1 + taxRate)
       setForm({
-        requiredVolume: res.data.requiredVolume,
-        commissionRate: (res.data.commissionRate * 100).toFixed(2),
-        totalWorkDays: res.data.totalWorkDays
+        incomeGoal: incomeGoal.toFixed(2),
+        commissionRate: (commissionRate * 100).toFixed(2),
+        taxRate: (taxRate * 100).toFixed(2),
+        totalWorkDays
       })
     }).catch(() => {})
   }, [])
@@ -35,8 +40,9 @@ const Settings = () => {
     try {
       setLoading(true)
       await axios.put("/season/update", {
-        requiredVolume: Number(form.requiredVolume),
+        incomeGoal: Number(form.incomeGoal),
         commissionRate: Number(form.commissionRate),
+        taxRate: Number(form.taxRate),
         totalWorkDays: Number(form.totalWorkDays)
       })
       setSaved(true)
@@ -50,7 +56,7 @@ const Settings = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token")
-    navigate("/login")
+    navigate("/welcome")
   }
 
   return (
@@ -65,14 +71,22 @@ const Settings = () => {
       <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>SEASON GOALS</Typography>
 
       <TextField
-        fullWidth label="Income Goal ($)" name="requiredVolume"
-        type="number" value={form.requiredVolume}
+        fullWidth label="Income Goal ($)" name="incomeGoal"
+        type="number" value={form.incomeGoal}
         onChange={handleChange} sx={{ mb: 2 }}
       />
       <TextField
         fullWidth label="Commission Rate (%)" name="commissionRate"
         type="number" slotProps={{ input: { step: "0.01" } }}
-        value={form.commissionRate} onChange={handleChange}
+        value={form.commissionRate}
+        onChange={handleChange} sx={{ mb: 2 }}
+      />
+      <TextField
+        fullWidth label="Tax Rate (%)" name="taxRate"
+        type="number" slotProps={{ input: { step: "0.01" } }}
+        value={form.taxRate}
+        onChange={handleChange}
+        helperText="e.g. 13 for Ontario HST, 5 for GST only"
         sx={{ mb: 2 }}
       />
       <TextField
