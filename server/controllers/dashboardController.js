@@ -55,9 +55,26 @@ export const getDashboard = async (req, res) => {
       (sum, e) => sum + (e.salesVolume || 0), 0
     )
 
-    const todayTarget = season.totalWorkDays > 0
-      ? season.requiredVolume / season.totalWorkDays
-      : 0
+    // Count completed days from DailySummary records
+    const completedDays = await DailySummary.countDocuments({
+      userId,
+      seasonId: season._id,
+      isCompleted: true
+    })
+
+    // Volume already sold across all completed days
+    const completedVolume = entries
+      .filter(e => new Date(e.date) < startOfDay)
+      .reduce((sum, e) => sum + (e.salesVolume || 0), 0)
+
+    // Remaining work days (minimum 1 to avoid division by zero)
+    const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
+
+    // Remaining volume needed
+    const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
+
+    // Dynamic daily target
+    const todayTarget = remainingVolume / remainingDays
 
     const todayDifference = todaySales - todayTarget
     const remainingToday = Math.max(todayTarget - todaySales, 0)

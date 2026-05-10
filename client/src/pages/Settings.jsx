@@ -47,6 +47,7 @@ const Settings = () => {
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
+      navigate("/")
     } catch (err) {
       setError(err.response?.data?.message || "Save failed")
     } finally {
@@ -98,7 +99,7 @@ const Settings = () => {
       {error && <Typography color="error" sx={{ mb: 1 }}>{error}</Typography>}
 
       <Button fullWidth variant="contained" onClick={handleSave} disabled={loading} sx={{ mb: 1 }}>
-        {saved ? "✅ Saved!" : loading ? "Saving..." : "Save Changes"}
+        {loading ? "Saving..." : "Save Changes"}
       </Button>
 
       <Divider sx={{ my: 3 }} />
