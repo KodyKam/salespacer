@@ -1,21 +1,20 @@
 // server/controllers/dashboardController.js
 import Season from "../models/Season.js"
 import DailyEntry from "../models/DailyEntry.js"
-// import { DEV_USER_ID } from "../config/devUser.js"
 import DailySummary from "../models/DailySummary.js"
+import { DateTime } from "luxon"
 
 export const getDashboard = async (req, res) => {
   try {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
 
+    const userTimezone = req.headers["x-timezone"] || "UTC"
+    const now = DateTime.now().setZone(userTimezone)
+    const startOfDay = now.startOf("day").toJSDate()
+    const endOfDay = now.endOf("day").toJSDate()
+
     const season = await Season.findOne({ userId })
-
-    const startOfDay = new Date()
-    startOfDay.setHours(0, 0, 0, 0)
-
-    const endOfDay = new Date()
-    endOfDay.setHours(23, 59, 59, 999)
 
     if (!season) {
       return res.json({
@@ -34,14 +33,12 @@ export const getDashboard = async (req, res) => {
       })
     }
 
-    // ✅ fixed: range query, not exact midnight
     const todaySummary = await DailySummary.findOne({
       userId,
       seasonId: season._id,
       date: { $gte: startOfDay, $lte: endOfDay }
     })
 
-    // ✅ fixed: userId filter added
     const entries = await DailyEntry.find({
       userId,
       seasonId: season._id
@@ -55,25 +52,18 @@ export const getDashboard = async (req, res) => {
       (sum, e) => sum + (e.salesVolume || 0), 0
     )
 
-    // Count completed days from DailySummary records
     const completedDays = await DailySummary.countDocuments({
       userId,
       seasonId: season._id,
       isCompleted: true
     })
 
-    // Volume already sold across all completed days
     const completedVolume = entries
       .filter(e => new Date(e.date) < startOfDay)
       .reduce((sum, e) => sum + (e.salesVolume || 0), 0)
 
-    // Remaining work days (minimum 1 to avoid division by zero)
     const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
-
-    // Remaining volume needed
     const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
-
-    // Dynamic daily target
     const todayTarget = remainingVolume / remainingDays
 
     const todayDifference = todaySales - todayTarget

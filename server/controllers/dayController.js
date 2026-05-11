@@ -2,7 +2,7 @@
 import Season from "../models/Season.js"
 import DailyEntry from "../models/DailyEntry.js"
 import DailySummary from "../models/DailySummary.js"
-// import { DEV_USER_ID } from "../config/devUser.js"
+import { DateTime } from "luxon"
 
 export const startDay = async (req, res) => {
   try {
@@ -14,22 +14,18 @@ export const startDay = async (req, res) => {
       return res.status(400).json({ message: "No season found" })
     }
 
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
+    const userTimezone = req.headers["x-timezone"] || "UTC"
+    const now = DateTime.now().setZone(userTimezone)
+    const startOfDay = now.startOf("day").toJSDate()
+    const endOfDay = now.endOf("day").toJSDate()
 
-    const todayEnd = new Date()
-    todayEnd.setHours(23, 59, 59, 999)
-
-    // Remove today's summary lock so user can add more entries
-    // Never delete entries — always preserve history
     const deleted = await DailySummary.findOneAndDelete({
       userId,
       seasonId: season._id,
-      date: { $gte: todayStart, $lte: todayEnd }
+      date: { $gte: startOfDay, $lte: endOfDay }
     })
 
     console.log("START DAY - unlocked:", !!deleted)
-
     res.json({ message: deleted ? "Day unlocked" : "Day already active" })
 
   } catch (err) {
@@ -42,18 +38,17 @@ export const endDay = async (req, res) => {
   try {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
     const season = await Season.findOne({ userId })
     if (!season) {
       return res.status(400).json({ message: "No season found" })
     }
 
-    const startOfDay = new Date()
-    startOfDay.setHours(0, 0, 0, 0)
+    const userTimezone = req.headers["x-timezone"] || "UTC"
+    const now = DateTime.now().setZone(userTimezone)
+    const startOfDay = now.startOf("day").toJSDate()
+    const endOfDay = now.endOf("day").toJSDate()
 
-    const endOfDay = new Date()
-    endOfDay.setHours(23, 59, 59, 999)
-
-    // If already completed, just return current state — don't block
     const existingSummary = await DailySummary.findOne({
       userId,
       seasonId: season._id,
@@ -61,9 +56,7 @@ export const endDay = async (req, res) => {
     })
 
     if (existingSummary) {
-      return res.status(400).json({
-        message: "Day already completed."
-      })
+      return res.status(400).json({ message: "Day already completed." })
     }
 
     const entries = await DailyEntry.find({
@@ -83,12 +76,9 @@ export const endDay = async (req, res) => {
     const difference = todaySales - todayTarget
     const isSuccess = todaySales >= todayTarget
 
-    const yesterdayStart = new Date()
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1)
-    yesterdayStart.setHours(0, 0, 0, 0)
-
-    const yesterdayEnd = new Date(yesterdayStart)
-    yesterdayEnd.setHours(23, 59, 59, 999)
+    // Yesterday in user's timezone
+    const yesterdayStart = now.minus({ days: 1 }).startOf("day").toJSDate()
+    const yesterdayEnd = now.minus({ days: 1 }).endOf("day").toJSDate()
 
     const yesterdaySummary = await DailySummary.findOne({
       userId,

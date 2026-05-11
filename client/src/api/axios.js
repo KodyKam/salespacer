@@ -17,6 +17,9 @@ instance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`
   }
 
+  // Add timezone header for better date handling on server
+  config.headers["x-timezone"] = Intl.DateTimeFormat().resolvedOptions().timeZone 
+
   return config
 })
 
