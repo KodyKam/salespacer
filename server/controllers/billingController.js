@@ -2,72 +2,87 @@
 import { stripe } from "../config/stripe.js"
 import User from "../models/User.js"
 
+export const createCheckoutSession = async (req, res) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const { plan } = req.body // "monthly" or "yearly"
+
+    const priceId = plan === "yearly"
+      ? process.env.STRIPE_PRICE_YEARLY
+      : process.env.STRIPE_PRICE_MONTHLY
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { userId },
+      success_url: `${process.env.CLIENT_URL}/pro-success`,
+      cancel_url: `${process.env.CLIENT_URL}/settings`
+    })
+
+    res.json({ url: session.url })
+  } catch (err) {
+    console.error("CHECKOUT ERROR:", err)
+    res.status(500).json({ message: "Failed to create checkout session" })
+  }
+}
+
 export const handleWebhook = async (req, res) => {
-
   const sig = req.headers["stripe-signature"]
-
   let event
 
   try {
-
     event = stripe.webhooks.constructEvent(
-
       req.body,
-
       sig,
-
       process.env.STRIPE_WEBHOOK_SECRET
-
     )
-
   } catch (err) {
-
     console.error("Webhook signature failed:", err.message)
-
     return res.status(400).send(`Webhook Error: ${err.message}`)
-
   }
 
-  if (event.type === "checkout.session.completed") {
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object
+      const userId = session.metadata.userId
+      await User.findByIdAndUpdate(userId, {
+        isPro: true,
+        stripeCustomerId: session.customer,
+        stripeSubscriptionId: session.subscription
+      })
+      console.log("PRO ACTIVATED for user:", userId)
+      break
+    }
 
-    const session = event.data.object
+    case "customer.subscription.deleted": {
+      // Subscription cancelled or payment failed
+      const subscription = event.data.object
+      await User.findOneAndUpdate(
+        { stripeSubscriptionId: subscription.id },
+        { isPro: false }
+      )
+      console.log("PRO DEACTIVATED for subscription:", subscription.id)
+      break
+    }
 
-    const userId = session.metadata.userId
-
-    await User.findByIdAndUpdate(userId, {
-
-      subscriptionStatus: "active",
-
-      stripeCustomerId: session.customer
-
-    })
-
+    default:
+      console.log("Unhandled webhook event:", event.type)
   }
 
   res.json({ received: true })
-
 }
 
-// Protected route because user ID needed for metadata and security
-export const createCheckoutSession = async (req, res) => {
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "subscription",
+export const getSubscriptionStatus = async (req, res) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
 
-    line_items: [
-      {
-        price: process.env.STRIPE_PRICE_ID,
-        quantity: 1
-      }
-    ],
-
-    metadata: {
-      userId: "dev-user-123"
-    },
-
-    success_url: `${process.env.CLIENT_URL}/success`,
-    cancel_url: `${process.env.CLIENT_URL}/cancel`
-  })
-
-  res.json({ url: session.url })
+    const user = await User.findById(userId).select("isPro stripeCustomerId")
+    res.json({ isPro: user?.isPro || false })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
 }

@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom"
 import axios from "../api/axios"
 import { Box, TextField, Button, Typography, IconButton, Divider } from "@mui/material"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { useAuth } from "../context/AuthContext"
 
 const Settings = () => {
+  const { isPro } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     incomeGoal: "",
@@ -101,6 +103,71 @@ const Settings = () => {
       <Button fullWidth variant="contained" onClick={handleSave} disabled={loading} sx={{ mb: 1 }}>
         {loading ? "Saving..." : "Save Changes"}
       </Button>
+
+      <Divider sx={{ my: 3 }} />
+
+<Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>YOUR PLAN</Typography>
+
+{isPro ? (
+  <Box sx={{
+    p: 2, borderRadius: 2,
+    bgcolor: "#e8f5e9", border: "1px solid #c8e6c9",
+    mb: 2
+  }}>
+    <Typography fontWeight="bold">✅ SalesPacer Pro</Typography>
+    <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
+      You have full access to all pro features.
+    </Typography>
+  </Box>
+) : (
+  <Box sx={{
+    p: 2, borderRadius: 2,
+    bgcolor: "#f3f4f6", border: "1px solid #e0e0e0",
+    mb: 2
+  }}>
+    <Typography fontWeight="bold">Free Plan</Typography>
+    <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5, mb: 2 }}>
+      Upgrade to Pro to unlock graphs, trends, win rate, pace projections and more.
+    </Typography>
+
+    <Button
+      fullWidth variant="contained" color="primary"
+      sx={{ mb: 1 }}
+      onClick={async () => {
+        try {
+          const res = await axios.post("/billing/create-checkout-session", {
+            plan: "monthly"
+          })
+          window.location.href = res.data.url
+        } catch (err) {
+          alert("Failed to start checkout")
+        }
+      }}
+    >
+      Upgrade — $4.99/month
+    </Button>
+
+    <Button
+      fullWidth variant="outlined" color="primary"
+      onClick={async () => {
+        try {
+          const res = await axios.post("/billing/create-checkout-session", {
+            plan: "yearly"
+          })
+          window.location.href = res.data.url
+        } catch (err) {
+          alert("Failed to start checkout")
+        }
+      }}
+    >
+      Upgrade — $49.99/year
+    </Button>
+
+    <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.5, textAlign: "center" }}>
+      Save 17% with yearly billing
+    </Typography>
+  </Box>
+)}
 
       <Divider sx={{ my: 3 }} />
 

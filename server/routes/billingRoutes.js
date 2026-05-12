@@ -2,15 +2,17 @@
 import express from "express"
 import {
   handleWebhook,
-  createCheckoutSession
+  createCheckoutSession,
+  getSubscriptionStatus
 } from "../controllers/billingController.js"
-
 import { protect } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-router.post("/create-checkout-session", createCheckoutSession)
+// Webhook must use raw body — before express.json() parses it
+router.post("/webhook", express.raw({ type: "application/json" }), handleWebhook)
 
-router.post("/webhook", handleWebhook)
+router.post("/create-checkout-session", protect, createCheckoutSession)
+router.get("/status", protect, getSubscriptionStatus)
 
 export default router

@@ -21,6 +21,7 @@ const Login = () => {
       setError("")
       const res = await axios.post("/auth/login", form)
       localStorage.setItem("token", res.data.token)
+      localStorage.setItem("isPro", res.data.isPro || false)
 
       // Send to setup if they have no season yet
       try {

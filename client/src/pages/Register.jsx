@@ -21,6 +21,7 @@ const Register = () => {
       setError("")
       const res = await axios.post("/auth/register", form)
       localStorage.setItem("token", res.data.token)
+      localStorage.setItem("isPro", res.data.isPro || false)
       navigate("/setup")
     } catch (err) {
       setError(err.response?.data?.message || "Register failed")
