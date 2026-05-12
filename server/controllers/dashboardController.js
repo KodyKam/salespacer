@@ -52,19 +52,24 @@ export const getDashboard = async (req, res) => {
       (sum, e) => sum + (e.salesVolume || 0), 0
     )
 
-    const completedDays = await DailySummary.countDocuments({
+    // Get all completed daily summaries
+    const completedSummaries = await DailySummary.find({
       userId,
       seasonId: season._id,
       isCompleted: true
     })
 
-    const completedVolume = entries
-      .filter(e => new Date(e.date) < startOfDay)
-      .reduce((sum, e) => sum + (e.salesVolume || 0), 0)
+    const completedDays = completedSummaries.length
+
+    // Use the sales figures recorded in summaries for completed days
+    // This is consistent with what was locked in when Finish Day was clicked
+    const completedVolume = completedSummaries.reduce(
+      (sum, s) => sum + (s.sales || 0), 0
+    )
 
     const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
     const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
-    const todayTarget = remainingVolume / remainingDays
+    const todayTarget = remainingDays > 0 ? remainingVolume / remainingDays : 0
 
     const todayDifference = todaySales - todayTarget
     const remainingToday = Math.max(todayTarget - todaySales, 0)
