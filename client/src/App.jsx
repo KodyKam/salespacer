@@ -11,6 +11,7 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import ForgotPassword from "./pages/ForgotPassword"
 import ResetPassword from "./pages/ResetPassword"
+import ProSuccess from "./pages/ProSuccess"
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token")
@@ -46,6 +47,7 @@ const App = () => {
             <MainLayout><DaySummary /></MainLayout>
           </PrivateRoute>
         } />
+        <Route path="/pro-success" element={<PrivateRoute><ProSuccess /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/welcome" />} />
       </Routes>
     </BrowserRouter>

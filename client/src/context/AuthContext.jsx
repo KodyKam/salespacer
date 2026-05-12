@@ -1,46 +1,44 @@
 // client/src/context/AuthContext.js
 import { createContext, useState, useContext, useEffect } from 'react'
-// import { useNavigate } from 'react-router-dom'
 import axios from '../api/axios'
 
 const AuthContext = createContext()
-
 export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
+  const [isPro, setIsPro] = useState(false)
   const [loading, setLoading] = useState(true)
-  // const navigate = useNavigate()
 
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token')
       if (token) {
         try {
-          // Optional: Verify token with backend
-          const response = await axios.get('/dashboard')
-          if (response.data) {
-            setUser({ token })
-          }
+          const res = await axios.get('/billing/status')
+          setUser({ token })
+          setIsPro(res.data.isPro)
+          localStorage.setItem('isPro', res.data.isPro)
         } catch (err) {
-          // Token invalid
           localStorage.removeItem('token')
+          localStorage.removeItem('isPro')
+          setIsPro(false)
         }
       }
       setLoading(false)
     }
-    
     checkAuth()
   }, [])
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('isPro')
     setUser(null)
-    // navigate('/login')
+    setIsPro(false)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, isPro, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )
