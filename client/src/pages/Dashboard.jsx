@@ -326,7 +326,7 @@ const Dashboard = () => {
         </Alert>
       </Snackbar>
 
-      <StatsModal entries={safe.entries} />
+      <StatsModal entries={safe.entries} todayTarget={safe.todayTarget} />
     </Box>
   )
 }
