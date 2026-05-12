@@ -1,13 +1,18 @@
 // server/controllers/billingController.js
-import { stripe } from "../config/stripe.js"
+import { getStripe } from "../config/stripe.js"
 import User from "../models/User.js"
 
 export const createCheckoutSession = async (req, res) => {
   try {
+    const stripe = getStripe()
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
 
     const { plan } = req.body // "monthly" or "yearly"
+
+    console.log("Plan:", plan)
+    console.log("Monthly:", process.env.STRIPE_PRICE_MONTHLY)
+    console.log("Yearly:", process.env.STRIPE_PRICE_YEARLY)
 
     const priceId = plan === "yearly"
       ? process.env.STRIPE_PRICE_YEARLY
@@ -30,6 +35,7 @@ export const createCheckoutSession = async (req, res) => {
 }
 
 export const handleWebhook = async (req, res) => {
+  const stripe = getStripe()
   const sig = req.headers["stripe-signature"]
   let event
 
