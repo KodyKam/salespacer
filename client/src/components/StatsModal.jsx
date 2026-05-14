@@ -2,8 +2,11 @@
 import {
   Dialog, DialogTitle, DialogContent,
   Typography, Box, List, ListItem, ListItemText,
-  Divider, Tabs, Tab, ToggleButton, ToggleButtonGroup
+  Divider, Tabs, Tab, ToggleButton, ToggleButtonGroup,
+  IconButton
 } from "@mui/material"
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft"
+import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import { useEffect, useState } from "react"
 import {
   ComposedChart, Bar, Line, XAxis, YAxis,
@@ -17,6 +20,11 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
   const [tab, setTab] = useState(0)
   const [range, setRange] = useState("7")
   const { isPro } = useAuth()
+
+  const today = new Date()
+  const [calendarDate, setCalendarDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1)
+  )
 
   useEffect(() => {
     const handler = () => setOpen(true)
@@ -37,6 +45,13 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
   const sortedDates = Object.keys(grouped).sort(
     (a, b) => new Date(b) - new Date(a)
   )
+
+  // Build summary lookup by date string
+  const summaryByDate = summaries.reduce((acc, s) => {
+    const key = new Date(s.date).toDateString()
+    acc[key] = s
+    return acc
+  }, {})
 
   // Build chart data from summaries
   const getChartData = () => {
@@ -105,8 +120,40 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
     : [{ name: "No data", value: 1 }]
 
   const COLORS = ["#4caf50", "#f44336"]
-
   const chartData = getChartData()
+
+  // Calendar helpers
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  }
+
+  const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+  }
+
+  const getDayColor = (date) => {
+    const isToday = date.toDateString() === today.toDateString()
+    const isFuture = date > today
+    const summary = summaryByDate[date.toDateString()]
+
+    if (isFuture) return { bg: "#f5f5f5", text: "#bbb" }
+    if (isToday) return { bg: "#1976d2", text: "white" }
+    if (!summary) return { bg: "#f5f5f5", text: "#999" }
+    if (summary.status === "on-track") return { bg: "#4caf50", text: "white" }
+    return { bg: "#f44336", text: "white" }
+  }
+
+  const prevMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))
+  }
+
+  const daysInMonth = getDaysInMonth(calendarDate)
+  const firstDay = getFirstDayOfMonth(calendarDate)
+  const monthName = calendarDate.toLocaleDateString("en-CA", { month: "long", year: "numeric" })
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
@@ -116,16 +163,13 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
         value={tab}
         onChange={(e, v) => setTab(v)}
         sx={{ px: 2, borderBottom: "1px solid #eee" }}
+        variant="scrollable"
+        scrollButtons="auto"
       >
         <Tab label="Activity" />
-        <Tab
-          label={isPro ? "📈 Graph" : "📈 Graph (Pro)"}
-          disabled={!isPro}
-        />
-        <Tab
-          label={isPro ? "🏆 Win Rate" : "🏆 Win Rate (Pro)"}
-          disabled={!isPro}
-        />
+        <Tab label={isPro ? "📈 Graph" : "📈 Graph (Pro)"} disabled={!isPro} />
+        <Tab label={isPro ? "🏆 Win Rate" : "🏆 Win Rate (Pro)"} disabled={!isPro} />
+        <Tab label={isPro ? "📅 Calendar" : "📅 Calendar (Pro)"} disabled={!isPro} />
       </Tabs>
 
       <DialogContent>
@@ -162,7 +206,7 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
           </>
         )}
 
-        {/* TAB 1 — Graph (Pro only) */}
+        {/* TAB 1 — Graph */}
         {tab === 1 && isPro && (
           <Box>
             <ToggleButtonGroup
@@ -179,43 +223,32 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
 
             {chartData.length === 0 ? (
               <Typography sx={{ opacity: 0.6 }}>
-                No completed days in this range yet. Finish a day to see your graph.
+                No completed days in this range yet.
               </Typography>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11 }}
-                    tickFormatter={v => `$${v}`}
-                  />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} />
                   <Tooltip formatter={(value) => `$${value}`} />
                   <Legend />
                   <Bar dataKey="Sales" fill="#1976d2" radius={[4, 4, 0, 0]} />
                   <Line
-                    type="monotone"
-                    dataKey="Target"
-                    stroke="#f44336"
-                    strokeWidth={2}
-                    dot={false}
-                    strokeDasharray="5 5"
+                    type="monotone" dataKey="Target"
+                    stroke="#f44336" strokeWidth={2}
+                    dot={false} strokeDasharray="5 5"
                   />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
-
             <Typography variant="caption" sx={{ opacity: 0.5, mt: 2, display: "block" }}>
               Bars = daily sales · Dashed line = daily target
             </Typography>
           </Box>
         )}
 
-        {/* TAB 2 — Win Rate (Pro only) */}
+        {/* TAB 2 — Win Rate */}
         {tab === 2 && isPro && (
           <Box>
             {overall.total === 0 ? (
@@ -224,110 +257,137 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
               </Typography>
             ) : (
               <>
-                {/* Donut chart */}
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
                   <PieChart width={200} height={200}>
                     <Pie
                       data={donutData}
-                      cx={100}
-                      cy={100}
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={3}
-                      dataKey="value"
+                      cx={100} cy={100}
+                      innerRadius={60} outerRadius={90}
+                      paddingAngle={3} dataKey="value"
                     >
                       {donutData.map((entry, index) => (
-                        <Cell
-                          key={index}
-                          fill={overall.total > 0 ? COLORS[index] : "#e0e0e0"}
-                        />
+                        <Cell key={index} fill={overall.total > 0 ? COLORS[index] : "#e0e0e0"} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value, name) => [value, name]} />
                   </PieChart>
                 </Box>
 
-                {/* Win rate label in center */}
-                <Typography
-                  variant="h3"
-                  fontWeight="bold"
-                  sx={{ textAlign: "center", mt: -2 }}
-                >
+                <Typography variant="h3" fontWeight="bold" sx={{ textAlign: "center", mt: -2 }}>
                   {overall.rate}%
                 </Typography>
                 <Typography sx={{ textAlign: "center", opacity: 0.6, mb: 3 }}>
                   Overall Win Rate
                 </Typography>
 
-                {/* Stats grid */}
-                <Box sx={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 2,
-                  mb: 2
-                }}>
-                  <Box sx={{
-                    p: 2, borderRadius: 2,
-                    bgcolor: "#f3f4f6", textAlign: "center"
-                  }}>
-                    <Typography variant="h5" fontWeight="bold">
-                      {last7.rate}%
-                    </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                      Last 7 Days
-                    </Typography>
-                    <Typography variant="body2">
-                      {last7.wins}/{last7.total} days
-                    </Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mb: 2 }}>
+                  {[
+                    { label: "Last 7 Days", data: last7 },
+                    { label: "Last 30 Days", data: last30 }
+                  ].map(({ label, data }) => (
+                    <Box key={label} sx={{ p: 2, borderRadius: 2, bgcolor: "#f3f4f6", textAlign: "center" }}>
+                      <Typography variant="h5" fontWeight="bold">{data.rate}%</Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.6 }}>{label}</Typography>
+                      <Typography variant="body2">{data.wins}/{data.total} days</Typography>
+                    </Box>
+                  ))}
+                  <Box sx={{ p: 2, borderRadius: 2, bgcolor: "#f3f4f6", textAlign: "center" }}>
+                    <Typography variant="h5" fontWeight="bold">{overall.wins}</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.6 }}>Total Wins</Typography>
+                    <Typography variant="body2">out of {overall.total} days</Typography>
                   </Box>
-
-                  <Box sx={{
-                    p: 2, borderRadius: 2,
-                    bgcolor: "#f3f4f6", textAlign: "center"
-                  }}>
-                    <Typography variant="h5" fontWeight="bold">
-                      {last30.rate}%
-                    </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                      Last 30 Days
-                    </Typography>
-                    <Typography variant="body2">
-                      {last30.wins}/{last30.total} days
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{
-                    p: 2, borderRadius: 2,
-                    bgcolor: "#f3f4f6", textAlign: "center"
-                  }}>
-                    <Typography variant="h5" fontWeight="bold">
-                      {overall.wins}
-                    </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                      Total Wins
-                    </Typography>
-                    <Typography variant="body2">
-                      out of {overall.total} days
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{
-                    p: 2, borderRadius: 2,
-                    bgcolor: "#f3f4f6", textAlign: "center"
-                  }}>
-                    <Typography variant="h5" fontWeight="bold">
-                      🔥 {bestStreak}
-                    </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                      Best Streak
-                    </Typography>
-                    <Typography variant="body2">
-                      days in a row
-                    </Typography>
+                  <Box sx={{ p: 2, borderRadius: 2, bgcolor: "#f3f4f6", textAlign: "center" }}>
+                    <Typography variant="h5" fontWeight="bold">🔥 {bestStreak}</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.6 }}>Best Streak</Typography>
+                    <Typography variant="body2">days in a row</Typography>
                   </Box>
                 </Box>
               </>
             )}
+          </Box>
+        )}
+
+        {/* TAB 3 — Calendar */}
+        {tab === 3 && isPro && (
+          <Box>
+            {/* Month navigation */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, mt: 1 }}>
+              <IconButton onClick={prevMonth}><ChevronLeftIcon /></IconButton>
+              <Typography fontWeight="bold">{monthName}</Typography>
+              <IconButton onClick={nextMonth} disabled={
+                calendarDate.getMonth() === today.getMonth() &&
+                calendarDate.getFullYear() === today.getFullYear()
+              }>
+                <ChevronRightIcon />
+              </IconButton>
+            </Box>
+
+            {/* Day headers */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", mb: 1 }}>
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                <Typography key={d} variant="caption" sx={{ textAlign: "center", opacity: 0.5, fontWeight: "bold" }}>
+                  {d}
+                </Typography>
+              ))}
+            </Box>
+
+            {/* Calendar grid */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0.5 }}>
+              {/* Empty cells for first day offset */}
+              {Array.from({ length: firstDay }).map((_, i) => (
+                <Box key={`empty-${i}`} />
+              ))}
+
+              {/* Day cells */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1
+                const date = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day)
+                const { bg, text } = getDayColor(date)
+                const summary = summaryByDate[date.toDateString()]
+
+                return (
+                  <Box
+                    key={day}
+                    sx={{
+                      bgcolor: bg,
+                      color: text,
+                      borderRadius: 2,
+                      p: 0.5,
+                      textAlign: "center",
+                      minHeight: 48,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: summary ? "pointer" : "default"
+                    }}
+                    title={summary ? `$${Math.round(summary.sales)} / $${Math.round(summary.target)}` : ""}
+                  >
+                    <Typography variant="caption" fontWeight="bold">{day}</Typography>
+                    {summary && (
+                      <Typography sx={{ fontSize: 9, opacity: 0.9 }}>
+                        ${Math.round(summary.sales)}
+                      </Typography>
+                    )}
+                  </Box>
+                )
+              })}
+            </Box>
+
+            {/* Legend */}
+            <Box sx={{ display: "flex", gap: 2, mt: 3, justifyContent: "center" }}>
+              {[
+                { color: "#4caf50", label: "Hit target" },
+                { color: "#f44336", label: "Missed" },
+                { color: "#1976d2", label: "Today" },
+                { color: "#f5f5f5", label: "No data" }
+              ].map(({ color, label }) => (
+                <Box key={label} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: 1, bgcolor: color, border: "1px solid #ddd" }} />
+                  <Typography variant="caption" sx={{ opacity: 0.7 }}>{label}</Typography>
+                </Box>
+              ))}
+            </Box>
           </Box>
         )}
       </DialogContent>
