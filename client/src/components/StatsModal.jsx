@@ -11,7 +11,7 @@ import {
 } from "recharts"
 import { useAuth } from "../context/AuthContext"
 
-const StatsModal = ({ entries = [], todayTarget = 0 }) => {
+const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState(0)
   const [range, setRange] = useState("7")
@@ -23,7 +23,7 @@ const StatsModal = ({ entries = [], todayTarget = 0 }) => {
     return () => window.removeEventListener("open-stats", handler)
   }, [])
 
-  // Group entries by date
+  // Group entries by date for activity tab
   const grouped = entries.reduce((acc, entry) => {
     const d = new Date(entry.date)
     if (isNaN(d.getTime())) return acc
@@ -34,30 +34,33 @@ const StatsModal = ({ entries = [], todayTarget = 0 }) => {
   }, {})
 
   const sortedDates = Object.keys(grouped).sort(
-    (a, b) => new Date(a) - new Date(b)
+    (a, b) => new Date(b) - new Date(a)
   )
 
-  // Filter by range
-  const getFilteredDates = () => {
-    if (range === "all") return sortedDates
-    const days = Number(range)
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - days)
-    return sortedDates.filter(d => new Date(d) >= cutoff)
+  // Build chart data from summaries
+  const getChartData = () => {
+    let data = summaries.map(s => ({
+      date: new Date(s.date).toLocaleDateString("en-CA", {
+        month: "short", day: "numeric"
+      }),
+      Sales: Math.round(s.sales),
+      Target: Math.round(s.target)
+    }))
+
+    if (range !== "all") {
+      const days = Number(range)
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - days)
+      data = data.filter((_, i) => {
+        const summaryDate = new Date(summaries[i]?.date)
+        return summaryDate >= cutoff
+      })
+    }
+
+    return data
   }
 
-  const filteredDates = getFilteredDates()
-
-  // Build chart data
-  const chartData = filteredDates.map(date => {
-    const dayEntries = grouped[date]
-    const sales = dayEntries.reduce((sum, e) => sum + (e.salesVolume || 0), 0)
-    return {
-      date: new Date(date).toLocaleDateString("en-CA", { month: "short", day: "numeric" }),
-      Sales: Math.round(sales),
-      Target: Math.round(todayTarget)
-    }
-  })
+  const chartData = getChartData()
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
@@ -70,7 +73,7 @@ const StatsModal = ({ entries = [], todayTarget = 0 }) => {
       >
         <Tab label="Activity" />
         <Tab
-          label={isPro ? "Graph" : "📈 Graph (Pro)"}
+          label={isPro ? "📈 Graph" : "📈 Graph (Pro)"}
           disabled={!isPro}
         />
       </Tabs>
@@ -82,7 +85,7 @@ const StatsModal = ({ entries = [], todayTarget = 0 }) => {
             {sortedDates.length === 0 && (
               <Typography>No activity yet.</Typography>
             )}
-            {[...sortedDates].reverse().map((date) => {
+            {sortedDates.map((date) => {
               const total = grouped[date].reduce(
                 (sum, e) => sum + (e.salesVolume || 0), 0
               )
@@ -125,7 +128,9 @@ const StatsModal = ({ entries = [], todayTarget = 0 }) => {
             </ToggleButtonGroup>
 
             {chartData.length === 0 ? (
-              <Typography>No data for this range yet.</Typography>
+              <Typography sx={{ opacity: 0.6 }}>
+                No completed days in this range yet. Finish a day to see your graph.
+              </Typography>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart data={chartData}>
@@ -139,11 +144,13 @@ const StatsModal = ({ entries = [], todayTarget = 0 }) => {
                     tick={{ fontSize: 11 }}
                     tickFormatter={v => `$${v}`}
                   />
-                  <Tooltip
-                    formatter={(value) => `$${value}`}
-                  />
+                  <Tooltip formatter={(value) => `$${value}`} />
                   <Legend />
-                  <Bar dataKey="Sales" fill="#1976d2" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="Sales"
+                    fill="#1976d2"
+                    radius={[4, 4, 0, 0]}
+                  />
                   <Line
                     type="monotone"
                     dataKey="Target"

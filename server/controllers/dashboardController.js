@@ -28,6 +28,7 @@ export const getDashboard = async (req, res) => {
         streakStatus: "",
         nextAction: "Create a season to begin",
         entries: [],
+        summaries: [],
         isOnTrackToday: true,
         isDayCompleted: false
       })
@@ -44,6 +45,12 @@ export const getDashboard = async (req, res) => {
       seasonId: season._id
     }).sort({ date: -1 })
 
+    const summaries = await DailySummary.find({
+      userId,
+      seasonId: season._id,
+      isCompleted: true
+    }).sort({ date: 1 })
+
     const todayEntries = entries.filter(
       e => new Date(e.date) >= startOfDay && new Date(e.date) <= endOfDay
     )
@@ -52,24 +59,15 @@ export const getDashboard = async (req, res) => {
       (sum, e) => sum + (e.salesVolume || 0), 0
     )
 
-    // Get all completed daily summaries
-    const completedSummaries = await DailySummary.find({
-      userId,
-      seasonId: season._id,
-      isCompleted: true
-    })
-
+    const completedSummaries = summaries
     const completedDays = completedSummaries.length
-
-    // Use the sales figures recorded in summaries for completed days
-    // This is consistent with what was locked in when Finish Day was clicked
     const completedVolume = completedSummaries.reduce(
       (sum, s) => sum + (s.sales || 0), 0
     )
 
     const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
     const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
-    const todayTarget = remainingDays > 0 ? remainingVolume / remainingDays : 0
+    const todayTarget = remainingVolume / remainingDays
 
     const todayDifference = todaySales - todayTarget
     const remainingToday = Math.max(todayTarget - todaySales, 0)
@@ -109,7 +107,8 @@ export const getDashboard = async (req, res) => {
         : `You need $${remainingToday.toFixed(0)} more today`,
       isOnTrackToday,
       isDayCompleted: !!todaySummary,
-      entries
+      entries,
+      summaries
     })
 
   } catch (err) {

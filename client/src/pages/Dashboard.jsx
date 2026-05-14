@@ -88,6 +88,7 @@ const Dashboard = () => {
     isOnTrackToday: data?.isOnTrackToday ?? true,
     isDayCompleted: data?.isDayCompleted ?? false,
     entries: data?.entries ?? [],
+    summaries: data?.summaries ?? [],
     streak: data?.streak ?? 0
   }
 
@@ -326,7 +327,7 @@ const Dashboard = () => {
         </Alert>
       </Snackbar>
 
-      <StatsModal entries={safe.entries} todayTarget={safe.todayTarget} />
+      <StatsModal entries={safe.entries} summaries={safe.summaries} todayTarget={safe.todayTarget} />
     </Box>
   )
 }
