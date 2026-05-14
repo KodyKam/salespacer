@@ -69,9 +69,22 @@ export const endDay = async (req, res) => {
 
     const todaySales = entries.reduce((sum, e) => sum + (e.salesVolume || 0), 0)
 
-    const todayTarget = season.totalWorkDays > 0
-      ? season.requiredVolume / season.totalWorkDays
-      : 0
+    // ✅ Dynamic target — same logic as dashboard
+    const completedSummaries = await DailySummary.find({
+      userId,
+      seasonId: season._id,
+      isCompleted: true,
+      date: { $lt: startOfDay }  // only previous completed days
+    })
+
+    const completedDays = completedSummaries.length
+    const completedVolume = completedSummaries.reduce(
+      (sum, s) => sum + (s.sales || 0), 0
+    )
+
+    const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
+    const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
+    const todayTarget = remainingVolume / remainingDays
 
     const difference = todaySales - todayTarget
     const isSuccess = todaySales >= todayTarget
@@ -101,7 +114,7 @@ export const endDay = async (req, res) => {
       seasonId: season._id,
       date: new Date(),
       sales: todaySales,
-      target: todayTarget,
+      target: todayTarget,  // ✅ now stores the dynamic target
       difference,
       status: isSuccess ? "on-track" : "behind",
       isCompleted: true
