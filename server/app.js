@@ -1,3 +1,4 @@
+// server/app.js
 import express from "express"
 import cors from "cors"
 import billingRoutes from "./routes/billingRoutes.js"
@@ -14,7 +15,9 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://salespacer.vercel.app"
+    "https://salespacer.vercel.app",
+    "https://salespacer.ca",
+    "https://www.salespacer.ca"
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"]
