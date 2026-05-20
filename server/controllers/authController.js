@@ -90,6 +90,7 @@ export const forgotPassword = async (req, res) => {
 
     await resend.emails.send({
       from: "noreply@salespacer.ca",
+      reply_to: "support@salespacer.ca",
       to: user.email,
       subject: "Reset your SalesPacer password",
       html: `
