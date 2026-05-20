@@ -89,7 +89,7 @@ export const forgotPassword = async (req, res) => {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`
 
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "noreply@salespacer.ca",
       to: user.email,
       subject: "Reset your SalesPacer password",
       html: `
