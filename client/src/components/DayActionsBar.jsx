@@ -1,6 +1,16 @@
 // client/src/components/DayActionsBar.jsx
 import axios from "../api/axios"
 import { useState } from "react"
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Typography
+} from "@mui/material"
 
 const DayActionsBar = ({ onEndDay, disabled }) => {
   const [loading, setLoading] = useState(false)
