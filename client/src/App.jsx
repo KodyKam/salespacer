@@ -12,6 +12,8 @@ import Register from "./pages/Register"
 import ForgotPassword from "./pages/ForgotPassword"
 import ResetPassword from "./pages/ResetPassword"
 import ProSuccess from "./pages/ProSuccess"
+import PrivacyPolicy from "./pages//PrivacyPolicy"
+import Terms from "./pages/Terms"
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token")
@@ -49,6 +51,8 @@ const App = () => {
         } />
         <Route path="/pro-success" element={<PrivateRoute><ProSuccess /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/welcome" />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<Terms />} />
       </Routes>
     </BrowserRouter>
   )

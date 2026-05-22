@@ -2,6 +2,7 @@
 import { Box, Card, Typography, Button, Stack } from "@mui/material"
 import { useNavigate } from "react-router-dom"
 import { useEffect } from "react"
+import Footer from "../components/Footer"
 
 const Landing = () => {
   const navigate = useNavigate()
@@ -59,6 +60,7 @@ const Landing = () => {
           </Button>
         </Stack>
       </Card>
+      <Footer />
     </Box>
   )
 }
