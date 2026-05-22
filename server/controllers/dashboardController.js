@@ -45,6 +45,28 @@ export const getDashboard = async (req, res) => {
       seasonId: season._id
     }).sort({ date: -1 })
 
+    // Check for unclosed yesterday
+const yesterdayStart = now.minus({ days: 1 }).startOf("day").toJSDate()
+const yesterdayEnd = now.minus({ days: 1 }).endOf("day").toJSDate()
+
+const yesterdayEntries = await DailyEntry.find({
+  userId,
+  seasonId: season._id,
+  date: { $gte: yesterdayStart, $lte: yesterdayEnd }
+})
+
+const yesterdaySummary = await DailySummary.findOne({
+  userId,
+  seasonId: season._id,
+  date: { $gte: yesterdayStart, $lte: yesterdayEnd }
+})
+
+const hasUnclosedYesterday = yesterdayEntries.length > 0 && !yesterdaySummary
+
+const unclosedYesterdaySales = yesterdayEntries.reduce(
+  (sum, e) => sum + (e.salesVolume || 0), 0
+)
+
     const summaries = await DailySummary.find({
       userId,
       seasonId: season._id,
@@ -112,7 +134,9 @@ export const getDashboard = async (req, res) => {
       season: {
         commissionRate: season.commissionRate,
         taxRate: season.taxRate
-      }
+      },
+      hasUnclosedYesterday,
+      unclosedYesterdaySales
     })
 
   } catch (err) {

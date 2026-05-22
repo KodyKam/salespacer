@@ -168,3 +168,100 @@ export const updateSummary = async (req, res) => {
     res.status(500).json({ message: "Failed to update summary" })
   }
 }
+
+export const endYesterday = async (req, res) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const season = await Season.findOne({ userId })
+    if (!season) return res.status(400).json({ message: "No season found" })
+
+    const userTimezone = req.headers["x-timezone"] || "UTC"
+    const now = DateTime.now().setZone(userTimezone)
+    const yesterdayStart = now.minus({ days: 1 }).startOf("day").toJSDate()
+    const yesterdayEnd = now.minus({ days: 1 }).endOf("day").toJSDate()
+
+    // Check if already closed
+    const existingSummary = await DailySummary.findOne({
+      userId,
+      seasonId: season._id,
+      date: { $gte: yesterdayStart, $lte: yesterdayEnd }
+    })
+
+    if (existingSummary) {
+      return res.status(400).json({ message: "Yesterday already closed." })
+    }
+
+    const entries = await DailyEntry.find({
+      userId,
+      seasonId: season._id,
+      date: { $gte: yesterdayStart, $lte: yesterdayEnd }
+    })
+
+    if (entries.length === 0) {
+      return res.status(400).json({ message: "No entries found for yesterday." })
+    }
+
+    const todaySales = entries.reduce((sum, e) => sum + (e.salesVolume || 0), 0)
+
+    // Dynamic target for yesterday
+    const completedSummaries = await DailySummary.find({
+      userId,
+      seasonId: season._id,
+      isCompleted: true,
+      date: { $lt: yesterdayStart }
+    })
+
+    const completedDays = completedSummaries.length
+    const completedVolume = completedSummaries.reduce(
+      (sum, s) => sum + (s.sales || 0), 0
+    )
+
+    const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
+    const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
+    const todayTarget = remainingVolume / remainingDays
+
+    const difference = todaySales - todayTarget
+    const isSuccess = todaySales >= todayTarget
+
+    // Streak — check day before yesterday
+    const dayBeforeYesterdayStart = now.minus({ days: 2 }).startOf("day").toJSDate()
+    const dayBeforeYesterdayEnd = now.minus({ days: 2 }).endOf("day").toJSDate()
+
+    const previousSummary = await DailySummary.findOne({
+      userId,
+      seasonId: season._id,
+      date: { $gte: dayBeforeYesterdayStart, $lte: dayBeforeYesterdayEnd }
+    })
+
+    let newStreak = 0
+    if (isSuccess) {
+      newStreak = previousSummary?.status === "on-track"
+        ? (season.streak || 0) + 1
+        : 1
+    }
+
+    season.streak = newStreak
+    await season.save()
+
+    await DailySummary.create({
+      userId,
+      seasonId: season._id,
+      date: yesterdayEnd, // use end of yesterday so it falls in yesterday's range
+      sales: todaySales,
+      target: todayTarget,
+      difference,
+      status: isSuccess ? "on-track" : "behind",
+      isCompleted: true,
+      notes: "Closed retroactively",
+      bonus: 0
+    })
+
+    res.json({ message: "Yesterday closed successfully", todaySales, todayTarget, isSuccess })
+
+  } catch (err) {
+    console.error("END YESTERDAY ERROR:", err)
+    res.status(500).json({ message: "Failed to close yesterday" })
+  }
+}
