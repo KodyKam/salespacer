@@ -30,7 +30,10 @@ export const getDashboard = async (req, res) => {
         entries: [],
         summaries: [],
         isOnTrackToday: true,
-        isDayCompleted: false
+        isDayCompleted: false,
+        hasUnclosedDays: false,
+        unclosedYesterdaySales: 0,
+        unclosedDate: null
       })
     }
 
@@ -45,33 +48,49 @@ export const getDashboard = async (req, res) => {
       seasonId: season._id
     }).sort({ date: -1 })
 
-    // Check for unclosed yesterday
-const yesterdayStart = now.minus({ days: 1 }).startOf("day").toJSDate()
-const yesterdayEnd = now.minus({ days: 1 }).endOf("day").toJSDate()
-
-const yesterdayEntries = await DailyEntry.find({
-  userId,
-  seasonId: season._id,
-  date: { $gte: yesterdayStart, $lte: yesterdayEnd }
-})
-
-const yesterdaySummary = await DailySummary.findOne({
-  userId,
-  seasonId: season._id,
-  date: { $gte: yesterdayStart, $lte: yesterdayEnd }
-})
-
-const hasUnclosedYesterday = yesterdayEntries.length > 0 && !yesterdaySummary
-
-const unclosedYesterdaySales = yesterdayEntries.reduce(
-  (sum, e) => sum + (e.salesVolume || 0), 0
-)
-
     const summaries = await DailySummary.find({
       userId,
       seasonId: season._id,
       isCompleted: true
     }).sort({ date: 1 })
+
+    // Check for any unclosed days (entries with no summary, excluding today)
+    const entryDayMap = {}
+    entries.forEach(e => {
+      const dayKey = DateTime.fromJSDate(new Date(e.date))
+        .setZone(userTimezone)
+        .startOf("day")
+        .toISO()
+      if (!entryDayMap[dayKey]) entryDayMap[dayKey] = []
+      entryDayMap[dayKey].push(e)
+    })
+
+    const unclosedDays = []
+    for (const [dayKey, dayEntries] of Object.entries(entryDayMap)) {
+      const dayStart = DateTime.fromISO(dayKey).setZone(userTimezone).startOf("day").toJSDate()
+      const dayEnd = DateTime.fromISO(dayKey).setZone(userTimezone).endOf("day").toJSDate()
+
+      // Skip today
+      if (dayStart >= startOfDay) continue
+
+      const daySummary = await DailySummary.findOne({
+        userId,
+        seasonId: season._id,
+        date: { $gte: dayStart, $lte: dayEnd }
+      })
+
+      if (!daySummary) {
+        unclosedDays.push({
+          date: dayKey,
+          sales: dayEntries.reduce((sum, e) => sum + (e.salesVolume || 0), 0)
+        })
+      }
+    }
+
+    const hasUnclosedDays = unclosedDays.length > 0
+    const mostRecentUnclosed = unclosedDays.sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    )[0] || null
 
     const todayEntries = entries.filter(
       e => new Date(e.date) >= startOfDay && new Date(e.date) <= endOfDay
@@ -135,8 +154,9 @@ const unclosedYesterdaySales = yesterdayEntries.reduce(
         commissionRate: season.commissionRate,
         taxRate: season.taxRate
       },
-      hasUnclosedYesterday,
-      unclosedYesterdaySales
+      hasUnclosedDays,
+      unclosedYesterdaySales: mostRecentUnclosed?.sales || 0,
+      unclosedDate: mostRecentUnclosed?.date || null
     })
 
   } catch (err) {

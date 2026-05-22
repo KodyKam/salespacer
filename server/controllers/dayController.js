@@ -169,48 +169,52 @@ export const updateSummary = async (req, res) => {
   }
 }
 
-export const endYesterday = async (req, res) => {
+export const endUnclosedDay = async (req, res) => {
   try {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const { date } = req.body // ISO date string of the day to close
+    if (!date) return res.status(400).json({ message: "Date required" })
 
     const season = await Season.findOne({ userId })
     if (!season) return res.status(400).json({ message: "No season found" })
 
     const userTimezone = req.headers["x-timezone"] || "UTC"
     const now = DateTime.now().setZone(userTimezone)
-    const yesterdayStart = now.minus({ days: 1 }).startOf("day").toJSDate()
-    const yesterdayEnd = now.minus({ days: 1 }).endOf("day").toJSDate()
+
+    const dayStart = DateTime.fromISO(date).setZone(userTimezone).startOf("day").toJSDate()
+    const dayEnd = DateTime.fromISO(date).setZone(userTimezone).endOf("day").toJSDate()
 
     // Check if already closed
     const existingSummary = await DailySummary.findOne({
       userId,
       seasonId: season._id,
-      date: { $gte: yesterdayStart, $lte: yesterdayEnd }
+      date: { $gte: dayStart, $lte: dayEnd }
     })
 
     if (existingSummary) {
-      return res.status(400).json({ message: "Yesterday already closed." })
+      return res.status(400).json({ message: "That day is already closed." })
     }
 
     const entries = await DailyEntry.find({
       userId,
       seasonId: season._id,
-      date: { $gte: yesterdayStart, $lte: yesterdayEnd }
+      date: { $gte: dayStart, $lte: dayEnd }
     })
 
     if (entries.length === 0) {
-      return res.status(400).json({ message: "No entries found for yesterday." })
+      return res.status(400).json({ message: "No entries found for that day." })
     }
 
     const todaySales = entries.reduce((sum, e) => sum + (e.salesVolume || 0), 0)
 
-    // Dynamic target for yesterday
+    // Dynamic target for that day
     const completedSummaries = await DailySummary.find({
       userId,
       seasonId: season._id,
       isCompleted: true,
-      date: { $lt: yesterdayStart }
+      date: { $lt: dayStart }
     })
 
     const completedDays = completedSummaries.length
@@ -225,14 +229,22 @@ export const endYesterday = async (req, res) => {
     const difference = todaySales - todayTarget
     const isSuccess = todaySales >= todayTarget
 
-    // Streak — check day before yesterday
-    const dayBeforeYesterdayStart = now.minus({ days: 2 }).startOf("day").toJSDate()
-    const dayBeforeYesterdayEnd = now.minus({ days: 2 }).endOf("day").toJSDate()
+    // Streak
+    const prevDayStart = DateTime.fromISO(date)
+      .setZone(userTimezone)
+      .minus({ days: 1 })
+      .startOf("day")
+      .toJSDate()
+    const prevDayEnd = DateTime.fromISO(date)
+      .setZone(userTimezone)
+      .minus({ days: 1 })
+      .endOf("day")
+      .toJSDate()
 
     const previousSummary = await DailySummary.findOne({
       userId,
       seasonId: season._id,
-      date: { $gte: dayBeforeYesterdayStart, $lte: dayBeforeYesterdayEnd }
+      date: { $gte: prevDayStart, $lte: prevDayEnd }
     })
 
     let newStreak = 0
@@ -248,7 +260,7 @@ export const endYesterday = async (req, res) => {
     await DailySummary.create({
       userId,
       seasonId: season._id,
-      date: yesterdayEnd, // use end of yesterday so it falls in yesterday's range
+      date: dayEnd,
       sales: todaySales,
       target: todayTarget,
       difference,
@@ -258,10 +270,10 @@ export const endYesterday = async (req, res) => {
       bonus: 0
     })
 
-    res.json({ message: "Yesterday closed successfully", todaySales, todayTarget, isSuccess })
+    res.json({ message: "Day closed successfully", todaySales, todayTarget, isSuccess })
 
   } catch (err) {
-    console.error("END YESTERDAY ERROR:", err)
-    res.status(500).json({ message: "Failed to close yesterday" })
+    console.error("END UNCLOSED DAY ERROR:", err)
+    res.status(500).json({ message: "Failed to close day" })
   }
 }

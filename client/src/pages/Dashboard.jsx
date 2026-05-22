@@ -34,11 +34,11 @@ const Dashboard = () => {
 
   const closeYesterday = async () => {
   try {
-    await axios.post("/day/end-yesterday")
+    await axios.post("/day/end-unclosed", { date: safe.unclosedDate })
     await refresh()
     setDismissedYesterday(true)
   } catch (err) {
-    alert(err?.response?.data?.message || "Failed to close yesterday")
+    alert(err?.response?.data?.message || "Failed to close day")
   }
 }
 
@@ -206,11 +206,15 @@ const Dashboard = () => {
   }}>
     <Box>
       <Typography variant="body2" fontWeight="bold">
-        ⚠️ Yesterday wasn't closed
+        ⚠️ You have an unclosed sales day
       </Typography>
       <Typography variant="caption" sx={{ opacity: 0.7 }}>
-        You had ${safe.unclosedYesterdaySales.toFixed(0)} in sales — close it to update your stats
-      </Typography>
+        ${safe.unclosedYesterdaySales.toFixed(0)} in sales from{" "}
+  {safe.unclosedDate
+    ? new Date(safe.unclosedDate).toLocaleDateString("en-CA", { month: "short", day: "numeric" })
+    : "a previous day"
+  } — close it to update your stats
+</Typography>
     </Box>
     <Box sx={{ display: "flex", gap: 1 }}>
       <Button
