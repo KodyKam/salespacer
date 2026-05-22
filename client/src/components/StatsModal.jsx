@@ -15,7 +15,7 @@ import {
 } from "recharts"
 import { useAuth } from "../context/AuthContext"
 
-const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
+const StatsModal = ({ entries = [], summaries = [], todayTarget = 0, season = null }) => {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState(0)
   const [range, setRange] = useState("7")
@@ -170,6 +170,7 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
         <Tab label={isPro ? "📈 Graph" : "📈 Graph (Pro)"} disabled={!isPro} />
         <Tab label={isPro ? "🏆 Win Rate" : "🏆 Win Rate (Pro)"} disabled={!isPro} />
         <Tab label={isPro ? "📅 Calendar" : "📅 Calendar (Pro)"} disabled={!isPro} />
+        <Tab label={isPro ? "📤 Export" : "📤 Export (Pro)"} disabled={!isPro} />
       </Tabs>
 
       <DialogContent>
@@ -388,6 +389,59 @@ const StatsModal = ({ entries = [], summaries = [], todayTarget = 0 }) => {
                 </Box>
               ))}
             </Box>
+          </Box>
+        )}
+        {/* TAB 4 — CSV Export */}
+        {tab === 4 && isPro && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ opacity: 0.6, mb: 3 }}>
+              Export your season data for income reporting. Includes gross sales, pre-tax sales, commission earned, and bonuses.
+            </Typography>
+
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => {
+                if (!summaries.length) {
+                  alert("No completed days to export yet.")
+                  return
+                }
+
+                const rows = [
+                  ["Date", "Gross Sales", "Pre-tax Sales", "Commission Earned", "Bonus", "Total Earnings"]
+                ]
+
+                summaries.forEach(s => {
+                  const grossSales = s.sales || 0
+                  const taxRate = season?.taxRate || 0.13 // fallback — ideally pass from season
+                  const commissionRate = season?.commissionRate || 0.32
+                  const preTax = grossSales / (1 + taxRate)
+                  const commission = preTax * commissionRate
+                  const bonus = s.bonus || 0
+                  const total = commission + bonus
+
+                  rows.push([
+                    new Date(s.date).toLocaleDateString("en-CA"),
+                    grossSales.toFixed(2),
+                    preTax.toFixed(2),
+                    commission.toFixed(2),
+                    bonus.toFixed(2),
+                    total.toFixed(2)
+                  ])
+                })
+
+                const csv = rows.map(r => r.join(",")).join("\n")
+                const blob = new Blob([csv], { type: "text/csv" })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = url
+                a.download = `salespacer-export-${new Date().toISOString().split("T")[0]}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+            >
+              Download CSV
+            </Button>
           </Box>
         )}
       </DialogContent>

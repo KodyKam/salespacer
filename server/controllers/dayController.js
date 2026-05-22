@@ -109,6 +109,9 @@ export const endDay = async (req, res) => {
     season.streak = newStreak
     await season.save()
 
+    // Accept notes and bonus from request
+    const { notes = "", bonus = 0 } = req.body
+
     const saved = await DailySummary.create({
       userId,
       seasonId: season._id,
@@ -117,7 +120,9 @@ export const endDay = async (req, res) => {
       target: todayTarget,  // ✅ now stores the dynamic target
       difference,
       status: isSuccess ? "on-track" : "behind",
-      isCompleted: true
+      isCompleted: true,
+      notes,
+      bonus: Number(bonus) || 0
     })
 
     console.log("END DAY - summary saved:", saved._id)
@@ -128,11 +133,38 @@ export const endDay = async (req, res) => {
       difference,
       streak: newStreak,
       isSuccess,
+      notes,
+      bonus: Number(bonus) || 0,
       message: isSuccess ? "🔥 Strong day" : "⚠️ Tomorrow is a reset opportunity"
     })
 
   } catch (err) {
     console.error("END DAY ERROR:", err)
     res.status(500).json({ message: "End day failed" })
+  }
+}
+
+export const updateSummary = async (req, res) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const { summaryId, bonus, notes } = req.body
+
+    const summary = await DailySummary.findOneAndUpdate(
+      { _id: summaryId, userId },
+      {
+        ...(bonus !== undefined && { bonus: Number(bonus) }),
+        ...(notes !== undefined && { notes })
+      },
+      { new: true }
+    )
+
+    if (!summary) return res.status(404).json({ message: "Summary not found" })
+
+    res.json(summary)
+  } catch (err) {
+    console.error("UPDATE SUMMARY ERROR:", err)
+    res.status(500).json({ message: "Failed to update summary" })
   }
 }

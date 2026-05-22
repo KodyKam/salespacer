@@ -108,7 +108,11 @@ export const getDashboard = async (req, res) => {
       isOnTrackToday,
       isDayCompleted: !!todaySummary,
       entries,
-      summaries
+      summaries,
+      season: {
+        commissionRate: season.commissionRate,
+        taxRate: season.taxRate
+      }
     })
 
   } catch (err) {

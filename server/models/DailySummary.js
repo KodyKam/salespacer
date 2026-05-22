@@ -18,7 +18,9 @@ const DailySummarySchema = new mongoose.Schema(
       default: "behind"
     },
 
-    isCompleted: { type: Boolean, default: true }
+    isCompleted: { type: Boolean, default: true },
+    notes: { type: String, default: "" },
+    bonus: { type: Number, default: 0 }
   },
   { timestamps: true }
 )

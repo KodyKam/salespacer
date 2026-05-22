@@ -40,34 +40,26 @@ const Dashboard = () => {
     }
   }
 
-  const endDay = async () => {
-    try {
-      const res = await axios.post("/day/end")
+  const endDay = async ({ notes = "", bonus = 0 } = {}) => {
+  try {
+    const res = await axios.post("/day/end", { notes, bonus })
 
-      const summary = {
-        ...res.data,
-        timestamp: new Date().toISOString()
-      }
-
-      await refresh()
-
-      navigate("/day-summary", {
-        state: { summary }
-      })
-
-      return true
-
-    } catch (err) {
-      console.error("END DAY FAILED:", err)
-
-      alert(
-        err?.response?.data?.message ||
-        "Failed to end day. Try again."
-      )
-
-      return false
+    const summary = {
+      ...res.data,
+      timestamp: new Date().toISOString()
     }
+
+    await refresh()
+
+    navigate("/day-summary", { state: { summary } })
+    return true
+
+  } catch (err) {
+    console.error("END DAY FAILED:", err)
+    alert(err?.response?.data?.message || "Failed to end day. Try again.")
+    return false
   }
+}
 
   const loading = data === undefined
 
@@ -327,7 +319,7 @@ const Dashboard = () => {
         </Alert>
       </Snackbar>
 
-      <StatsModal entries={safe.entries} summaries={safe.summaries} todayTarget={safe.todayTarget} />
+      <StatsModal entries={safe.entries} summaries={safe.summaries} todayTarget={safe.todayTarget} season={data?.season} />
     </Box>
   )
 }
