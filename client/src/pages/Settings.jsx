@@ -106,6 +106,25 @@ const Settings = () => {
 
       <Divider sx={{ my: 3 }} />
 
+      <Divider sx={{ my: 3 }} />
+
+<Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>APP TOUR</Typography>
+
+<Button
+  fullWidth
+  variant="outlined"
+  sx={{ mb: 1 }}
+  onClick={() => {
+    localStorage.removeItem("tourCompleted")
+    navigate("/")
+    setTimeout(() => window.dispatchEvent(new Event("start-tour")), 300)
+  }}
+>
+  🎯 Take the App Tour
+</Button>
+
+<Divider sx={{ my: 3 }} />
+
 <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>YOUR PLAN</Typography>
 
 {isPro ? (
@@ -125,18 +144,7 @@ const Settings = () => {
     bgcolor: "#f3f4f6", border: "1px solid #e0e0e0",
     mb: 2
   }}>
-    <Button
-      fullWidth
-      variant="outlined"
-      sx={{ mt: 2 }}
-      onClick={() => {
-        localStorage.removeItem("tourCompleted")
-        navigate("/")
-        window.dispatchEvent(new Event("start-tour"))
-      }}
-    >
-      🎯 Take the App Tour
-    </Button>
+    
     <Typography fontWeight="bold">Free Plan</Typography>
     <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5, mb: 2 }}>
       Upgrade to Pro to unlock graphs, trends, win rate, pace projections and more.

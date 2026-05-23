@@ -111,7 +111,8 @@ const Dashboard = () => {
     hasUnclosedYesterday: data?.hasUnclosedYesterday ?? false,
     unclosedYesterdaySales: Number(data?.unclosedYesterdaySales ?? 0),
     progressPercent: Number(data?.progressPercent ?? 0),
-    totalVolume: Number(data?.totalVolume ?? 0)
+    totalVolume: Number(data?.totalVolume ?? 0),
+    unclosedDate: data?.unclosedDate || null
   }
 
   const isComplete = safe.todaySales >= safe.todayTarget
