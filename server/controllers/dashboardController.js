@@ -150,9 +150,12 @@ export const getDashboard = async (req, res) => {
       isDayCompleted: !!todaySummary,
       entries,
       summaries,
+      totalVolume,
       season: {
         commissionRate: season.commissionRate,
-        taxRate: season.taxRate
+        taxRate: season.taxRate,
+        requiredVolume: season.requiredVolume,
+        totalWorkDays: season.totalWorkDays
       },
       hasUnclosedDays,
       unclosedYesterdaySales: mostRecentUnclosed?.sales || 0,

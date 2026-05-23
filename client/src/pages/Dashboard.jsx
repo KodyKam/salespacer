@@ -11,6 +11,7 @@ import { useState, useEffect } from "react"
 import { Snackbar, Alert } from "@mui/material"
 import LogoutIcon from "@mui/icons-material/Logout"
 import { IconButton } from "@mui/material"
+import OnboardingTour from "../components/OnboardingTour"
 
 const Dashboard = () => {
   const { data, refresh } = useDashboard()
@@ -20,6 +21,7 @@ const Dashboard = () => {
   const [toast, setToast] = useState({ open: false, amount: 0 })
   const [openAdd, setOpenAdd] = useState(false)
   const [dismissedYesterday, setDismissedYesterday] = useState(false)
+  const [showTour, setShowTour] = useState(false)
 
   // Add scroll listener
   useEffect(() => {
@@ -29,6 +31,19 @@ const Dashboard = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+  // Auto-show tour for first time users
+  const tourDone = localStorage.getItem("tourCompleted")
+  if (!tourDone) {
+    setTimeout(() => setShowTour(true), 1000) // slight delay so dashboard loads first
+  }
+
+  // Manual trigger from Settings
+  const tourHandler = () => setShowTour(true)
+  window.addEventListener("start-tour", tourHandler)
+  return () => window.removeEventListener("start-tour", tourHandler)
+}, [])
 
   const isDayCompleted = data?.isDayCompleted ?? false
 
@@ -94,7 +109,9 @@ const Dashboard = () => {
     summaries: data?.summaries ?? [],
     streak: data?.streak ?? 0,
     hasUnclosedYesterday: data?.hasUnclosedYesterday ?? false,
-    unclosedYesterdaySales: Number(data?.unclosedYesterdaySales ?? 0)
+    unclosedYesterdaySales: Number(data?.unclosedYesterdaySales ?? 0),
+    progressPercent: Number(data?.progressPercent ?? 0),
+    totalVolume: Number(data?.totalVolume ?? 0)
   }
 
   const isComplete = safe.todaySales >= safe.todayTarget
@@ -283,6 +300,44 @@ const Dashboard = () => {
           </Typography>
         </Card>
 
+        {/* SEASON PROGRESS */}
+{hasSeason && (
+  <Card sx={{ p: 2, borderRadius: 3 }}>
+    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+      <Typography variant="subtitle2" sx={{ opacity: 0.6 }}>
+        SEASON PROGRESS
+      </Typography>
+      <Typography variant="subtitle2" fontWeight="bold">
+        {safe.progressPercent.toFixed(1)}%
+      </Typography>
+    </Box>
+
+    <Box sx={{
+      height: 10,
+      borderRadius: 5,
+      bgcolor: "#e0e0e0",
+      overflow: "hidden"
+    }}>
+      <Box sx={{
+        width: `${Math.min(safe.progressPercent, 100)}%`,
+        height: "100%",
+        borderRadius: 5,
+        bgcolor: safe.progressPercent >= 100 ? "#4caf50" : "#1976d2",
+        transition: "width 0.5s ease"
+      }} />
+    </Box>
+
+    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+      <Typography variant="caption" sx={{ opacity: 0.6 }}>
+        ${Number(data?.totalVolume ?? 0).toFixed(0)} sold
+      </Typography>
+      <Typography variant="caption" sx={{ opacity: 0.6 }}>
+        Goal: ${Number(data?.season?.requiredVolume ?? 0).toFixed(0)}
+      </Typography>
+    </Box>
+  </Card>
+)}
+
         {/* ACTION AREA (STATE SWITCH) */}
         {safe.isDayCompleted ? (
   <Card
@@ -378,6 +433,9 @@ const Dashboard = () => {
       </Snackbar>
 
       <StatsModal entries={safe.entries} summaries={safe.summaries} todayTarget={safe.todayTarget} season={data?.season} />
+    {showTour && (
+      <OnboardingTour onComplete={() => setShowTour(false)} />
+    )}
     </Box>
   )
 }
