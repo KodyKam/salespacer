@@ -10,6 +10,7 @@ const Settings = () => {
   const { isPro } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
+    name: "",
     incomeGoal: "",
     commissionRate: "",
     taxRate: "",
@@ -21,10 +22,10 @@ const Settings = () => {
 
   useEffect(() => {
     axios.get("/season").then(res => {
-      const { requiredVolume, commissionRate, taxRate, totalWorkDays } = res.data
-      // Back-calculate incomeGoal from stored requiredVolume
+      const { name, requiredVolume, commissionRate, taxRate, totalWorkDays } = res.data
       const incomeGoal = requiredVolume * commissionRate / (1 + taxRate)
       setForm({
+        name: name || "",
         incomeGoal: incomeGoal.toFixed(2),
         commissionRate: (commissionRate * 100).toFixed(2),
         taxRate: (taxRate * 100).toFixed(2),
@@ -42,13 +43,12 @@ const Settings = () => {
     try {
       setLoading(true)
       await axios.put("/season/update", {
+        name: form.name,
         incomeGoal: Number(form.incomeGoal),
         commissionRate: Number(form.commissionRate),
         taxRate: Number(form.taxRate),
         totalWorkDays: Number(form.totalWorkDays)
       })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
       navigate("/")
     } catch (err) {
       setError(err.response?.data?.message || "Save failed")
@@ -73,6 +73,13 @@ const Settings = () => {
 
       <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>SEASON GOALS</Typography>
 
+      <TextField
+        fullWidth label="Season Name" name="name"
+        value={form.name}
+        onChange={handleChange}
+        placeholder='e.g. "Summer 2026 — Driveway Sealing"'
+        sx={{ mb: 2 }}
+      />
       <TextField
         fullWidth label="Income Goal ($)" name="incomeGoal"
         type="number" value={form.incomeGoal}
@@ -106,88 +113,88 @@ const Settings = () => {
 
       <Divider sx={{ my: 3 }} />
 
+      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>HISTORY</Typography>
+      <Button
+        fullWidth variant="outlined"
+        onClick={() => navigate("/season-history")}
+        sx={{ mb: 1 }}
+      >
+        📚 View Season History
+      </Button>
+
       <Divider sx={{ my: 3 }} />
 
-<Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>APP TOUR</Typography>
+      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>APP TOUR</Typography>
+      <Button
+        fullWidth variant="outlined" sx={{ mb: 1 }}
+        onClick={() => {
+          localStorage.removeItem("tourCompleted")
+          navigate("/")
+          setTimeout(() => window.dispatchEvent(new Event("start-tour")), 300)
+        }}
+      >
+        🎯 Take the App Tour
+      </Button>
 
-<Button
-  fullWidth
-  variant="outlined"
-  sx={{ mb: 1 }}
-  onClick={() => {
-    localStorage.removeItem("tourCompleted")
-    navigate("/")
-    setTimeout(() => window.dispatchEvent(new Event("start-tour")), 300)
-  }}
->
-  🎯 Take the App Tour
-</Button>
+      <Divider sx={{ my: 3 }} />
 
-<Divider sx={{ my: 3 }} />
+      <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>YOUR PLAN</Typography>
 
-<Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>YOUR PLAN</Typography>
+      {isPro ? (
+        <Box sx={{
+          p: 2, borderRadius: 2,
+          bgcolor: "#e8f5e9", border: "1px solid #c8e6c9",
+          mb: 2
+        }}>
+          <Typography fontWeight="bold">✅ SalesPacer Pro</Typography>
+          <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
+            You have full access to all pro features.
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{
+          p: 2, borderRadius: 2,
+          bgcolor: "#f3f4f6", border: "1px solid #e0e0e0",
+          mb: 2
+        }}>
+          <Typography fontWeight="bold">Free Plan</Typography>
+          <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5, mb: 2 }}>
+            Upgrade to Pro to unlock graphs, trends, win rate, pace projections and more.
+          </Typography>
 
-{isPro ? (
-  <Box sx={{
-    p: 2, borderRadius: 2,
-    bgcolor: "#e8f5e9", border: "1px solid #c8e6c9",
-    mb: 2
-  }}>
-    <Typography fontWeight="bold">✅ SalesPacer Pro</Typography>
-    <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
-      You have full access to all pro features.
-    </Typography>
-  </Box>
-) : (
-  <Box sx={{
-    p: 2, borderRadius: 2,
-    bgcolor: "#f3f4f6", border: "1px solid #e0e0e0",
-    mb: 2
-  }}>
-    
-    <Typography fontWeight="bold">Free Plan</Typography>
-    <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5, mb: 2 }}>
-      Upgrade to Pro to unlock graphs, trends, win rate, pace projections and more.
-    </Typography>
+          <Button
+            fullWidth variant="contained" color="primary" sx={{ mb: 1 }}
+            onClick={async () => {
+              try {
+                const res = await axios.post("/billing/create-checkout-session", { plan: "monthly" })
+                window.location.href = res.data.url
+              } catch (err) {
+                alert("Failed to start checkout")
+              }
+            }}
+          >
+            Upgrade — $4.99/month
+          </Button>
 
-    <Button
-      fullWidth variant="contained" color="primary"
-      sx={{ mb: 1 }}
-      onClick={async () => {
-        try {
-          const res = await axios.post("/billing/create-checkout-session", {
-            plan: "monthly"
-          })
-          window.location.href = res.data.url
-        } catch (err) {
-          alert("Failed to start checkout")
-        }
-      }}
-    >
-      Upgrade — $4.99/month
-    </Button>
+          <Button
+            fullWidth variant="outlined" color="primary"
+            onClick={async () => {
+              try {
+                const res = await axios.post("/billing/create-checkout-session", { plan: "yearly" })
+                window.location.href = res.data.url
+              } catch (err) {
+                alert("Failed to start checkout")
+              }
+            }}
+          >
+            Upgrade — $49.99/year
+          </Button>
 
-    <Button
-      fullWidth variant="outlined" color="primary"
-      onClick={async () => {
-        try {
-          const res = await axios.post("/billing/create-checkout-session", {
-            plan: "yearly"
-          })
-          window.location.href = res.data.url
-        } catch (err) {
-          alert("Failed to start checkout")
-        }
-      }}
-    >
-      Upgrade — $49.99/year
-    </Button>
-
-    <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.5, textAlign: "center" }}>
-      Save 17% with yearly billing
-    </Typography>
-  </Box>
-)}
+          <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.5, textAlign: "center" }}>
+            Save 17% with yearly billing
+          </Typography>
+        </Box>
+      )}
 
       <Divider sx={{ my: 3 }} />
 

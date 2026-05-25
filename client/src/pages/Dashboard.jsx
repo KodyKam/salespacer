@@ -87,6 +87,16 @@ const Dashboard = () => {
   }
 }
 
+const endSeason = async () => {
+  if (!confirm("Are you sure you want to end this season? This cannot be undone.")) return
+  try {
+    const res = await axios.post("/season/end")
+    navigate("/season-complete", { state: { stats: res.data } })
+  } catch (err) {
+    alert(err?.response?.data?.message || "Failed to end season")
+  }
+}
+
   const loading = data === undefined
 
   if (loading) return <p>Loading...</p>
@@ -112,7 +122,9 @@ const Dashboard = () => {
     unclosedYesterdaySales: Number(data?.unclosedYesterdaySales ?? 0),
     progressPercent: Number(data?.progressPercent ?? 0),
     totalVolume: Number(data?.totalVolume ?? 0),
-    unclosedDate: data?.unclosedDate || null
+    unclosedDate: data?.unclosedDate || null,
+    seasonComplete: data?.seasonComplete ?? false,
+    completedDays: Number(data?.completedDays ?? 0)
   }
 
   const isComplete = safe.todaySales >= safe.todayTarget
@@ -250,6 +262,37 @@ const Dashboard = () => {
         Dismiss
       </Button>
     </Box>
+  </Box>
+)}
+
+{safe.seasonComplete && (
+  <Box sx={{
+    mx: 2, mt: 2, p: 2,
+    borderRadius: 2,
+    bgcolor: "#e8f5e9",
+    border: "1px solid #c8e6c9",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 1
+  }}>
+    <Box>
+      <Typography variant="body2" fontWeight="bold">
+        🏆 Season Complete!
+      </Typography>
+      <Typography variant="caption" sx={{ opacity: 0.7 }}>
+        You've worked all {safe.completedDays} planned days — ready to wrap up?
+      </Typography>
+    </Box>
+    <Button
+      size="small"
+      variant="contained"
+      color="success"
+      onClick={endSeason}
+    >
+      End Season
+    </Button>
   </Box>
 )}
 

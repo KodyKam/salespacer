@@ -14,6 +14,8 @@ import ResetPassword from "./pages/ResetPassword"
 import ProSuccess from "./pages/ProSuccess"
 import PrivacyPolicy from "./pages//PrivacyPolicy"
 import Terms from "./pages/Terms"
+import SeasonComplete from "./pages/SeasonComplete"
+import SeasonHistory from "./pages/SeasonHistory"
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token")
@@ -49,6 +51,12 @@ const App = () => {
             <MainLayout><DaySummary /></MainLayout>
           </PrivateRoute>
         } />
+        <Route path="/season-complete" element={
+            <PrivateRoute><SeasonComplete /></PrivateRoute>
+          } />
+          <Route path="/season-history" element={
+            <PrivateRoute><SeasonHistory /></PrivateRoute>
+          } />
         <Route path="/pro-success" element={<PrivateRoute><ProSuccess /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/welcome" />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

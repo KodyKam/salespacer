@@ -7,6 +7,7 @@ import { Box, Card, TextField, Button, Typography } from "@mui/material"
 const Setup = () => {
   const navigate = useNavigate()
   const [form, setForm] = useState({
+    name: "",
     incomeGoal: "",
     commissionRate: "",
     taxRate: "13",
@@ -24,6 +25,7 @@ const Setup = () => {
     setError("")
 
     const payload = {
+      name: form.name,
       incomeGoal: Number(form.incomeGoal),
       commissionRate: Number(form.commissionRate),
       taxRate: Number(form.taxRate),
@@ -59,6 +61,12 @@ const Setup = () => {
           Define your income goal and we'll pace you to it.
         </Typography>
         <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth label="Season Name" name="name"
+            placeholder='e.g. "Summer 2026 — Driveway Sealing"'
+            value={form.name}
+            onChange={handleChange} sx={{ mb: 2 }}
+          />
           <TextField
             fullWidth label="Income Goal ($)" name="incomeGoal"
             type="number" value={form.incomeGoal}

@@ -54,6 +54,10 @@ export const getDashboard = async (req, res) => {
       isCompleted: true
     }).sort({ date: 1 })
 
+    // Check if all work days are used up
+    const completedDays = summaries.length
+    const seasonComplete = completedDays >= season.totalWorkDays
+
     // Check for any unclosed days (entries with no summary, excluding today)
     const entryDayMap = {}
     entries.forEach(e => {
@@ -161,7 +165,9 @@ export const getDashboard = async (req, res) => {
       },
       hasUnclosedDays,
       unclosedYesterdaySales: mostRecentUnclosed?.sales || 0,
-      unclosedDate: mostRecentUnclosed?.date || null
+      unclosedDate: mostRecentUnclosed?.date || null,
+      seasonComplete,
+      completedDays
     })
 
   } catch (err) {
