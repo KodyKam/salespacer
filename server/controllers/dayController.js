@@ -47,7 +47,7 @@ export const endDay = async (req, res) => {
     const userTimezone = req.headers["x-timezone"] || "UTC"
     const now = DateTime.now().setZone(userTimezone)
     const startOfDay = now.startOf("day").toJSDate()
-    const endOfDay = now.endOf("day").toJSDate()
+    const endOfDay = now.endOf("day").toJSDate()  // ← this is dayEnd
 
     const existingSummary = await DailySummary.findOne({
       userId,
@@ -69,12 +69,11 @@ export const endDay = async (req, res) => {
 
     const todaySales = entries.reduce((sum, e) => sum + (e.salesVolume || 0), 0)
 
-    // ✅ Dynamic target — same logic as dashboard
     const completedSummaries = await DailySummary.find({
       userId,
       seasonId: season._id,
       isCompleted: true,
-      date: { $lt: startOfDay }  // only previous completed days
+      date: { $lt: startOfDay }
     })
 
     const completedDays = completedSummaries.length
@@ -89,7 +88,6 @@ export const endDay = async (req, res) => {
     const difference = todaySales - todayTarget
     const isSuccess = todaySales >= todayTarget
 
-    // Yesterday in user's timezone
     const yesterdayStart = now.minus({ days: 1 }).startOf("day").toJSDate()
     const yesterdayEnd = now.minus({ days: 1 }).endOf("day").toJSDate()
 
@@ -109,15 +107,14 @@ export const endDay = async (req, res) => {
     season.streak = newStreak
     await season.save()
 
-    // Accept notes and bonus from request
     const { notes = "", bonus = 0 } = req.body
 
     const saved = await DailySummary.create({
       userId,
       seasonId: season._id,
-      date: new Date(),
+      date: endOfDay,  // ✅ use endOfDay — saves as end of user's local day, not UTC now()
       sales: todaySales,
-      target: todayTarget,  // ✅ now stores the dynamic target
+      target: todayTarget,
       difference,
       status: isSuccess ? "on-track" : "behind",
       isCompleted: true,
