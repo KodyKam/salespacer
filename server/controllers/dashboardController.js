@@ -108,7 +108,9 @@ export const getDashboard = async (req, res) => {
 
     const remainingDays = Math.max(season.totalWorkDays - completedDays, 1)
     const remainingVolume = Math.max(season.requiredVolume - completedVolume, 0)
-    const todayTarget = remainingVolume / remainingDays
+    const todayTarget = todaySummary
+      ? todaySummary.target
+      : remainingVolume / remainingDays
 
     const todayDifference = todaySales - todayTarget
     const remainingToday = Math.max(todayTarget - todaySales, 0)
