@@ -197,6 +197,28 @@ const Settings = () => {
       )}
 
       <Divider sx={{ my: 3 }} />
+      <Divider sx={{ my: 3 }} />
+
+<Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>SEASON</Typography>
+
+<Button
+  fullWidth
+  color="success"
+  variant="outlined"
+  sx={{ mb: 2 }}
+  onClick={async () => {
+    if (confirm("Are you ready to end this season? You'll see a full summary before starting a new one.")) {
+      try {
+        const res = await axios.post("/season/end")
+        navigate("/season-complete", { state: { stats: res.data } })
+      } catch (err) {
+        alert(err?.response?.data?.message || "Failed to end season")
+      }
+    }
+  }}
+>
+  🏁 End Current Season
+</Button>
 
       <Typography variant="subtitle2" sx={{ mb: 1, opacity: 0.6 }}>DANGER ZONE</Typography>
 
