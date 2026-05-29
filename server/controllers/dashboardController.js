@@ -14,7 +14,7 @@ export const getDashboard = async (req, res) => {
     const startOfDay = now.startOf("day").toJSDate()
     const endOfDay = now.endOf("day").toJSDate()
 
-    const season = await Season.findOne({ userId })
+    const season = await Season.findOne({ userId, status: "active" })
 
     if (!season) {
       return res.json({
