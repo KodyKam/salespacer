@@ -118,7 +118,7 @@ const endSeason = async () => {
     entries: data?.entries ?? [],
     summaries: data?.summaries ?? [],
     streak: data?.streak ?? 0,
-    hasUnclosedYesterday: data?.hasUnclosedYesterday ?? false,
+    hasUnclosedYesterday: data?.hasUnclosedDays ?? false,
     unclosedYesterdaySales: Number(data?.unclosedYesterdaySales ?? 0),
     progressPercent: Number(data?.progressPercent ?? 0),
     totalVolume: Number(data?.totalVolume ?? 0),
