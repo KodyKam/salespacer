@@ -226,3 +226,25 @@ export const deleteSeason = async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 }
+
+export const getSeasonSummaries = async (req, res) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const { seasonId } = req.params
+
+    const season = await Season.findOne({ _id: seasonId, userId })
+    if (!season) return res.status(404).json({ message: "Season not found" })
+
+    const summaries = await DailySummary.find({
+      userId,
+      seasonId: season._id,
+      isCompleted: true
+    }).sort({ date: 1 })
+
+    res.json({ summaries, season })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}

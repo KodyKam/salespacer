@@ -18,5 +18,6 @@ router.put("/update", protect, updateSeason)
 router.post("/end", protect, endSeason)
 router.get("/history", protect, getSeasonHistory)
 router.delete("/", protect, deleteSeason)
+router.get("/:seasonId/summaries", protect, getSeasonSummaries)
 
 export default router

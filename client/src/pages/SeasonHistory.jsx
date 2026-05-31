@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import axios from "../api/axios"
 import {
   Box, Card, Typography, IconButton,
-  Chip, CircularProgress
+  Chip, CircularProgress, Button
 } from "@mui/material"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 
@@ -12,6 +12,7 @@ const SeasonHistory = () => {
   const navigate = useNavigate()
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(null)
 
   useEffect(() => {
     axios.get("/season/history")
@@ -19,6 +20,55 @@ const SeasonHistory = () => {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  const handleExport = async (seasonId, seasonName) => {
+    try {
+      setExporting(seasonId)
+      const res = await axios.get(`/season/${seasonId}/summaries`)
+      const { summaries, season } = res.data
+
+      if (!summaries.length) {
+        alert("No completed days to export for this season.")
+        return
+      }
+
+      const rows = [
+        ["Date", "Gross Sales", "Pre-tax Sales", "Commission Earned", "Bonus", "Total Earnings"]
+      ]
+
+      summaries.forEach(s => {
+        const grossSales = s.sales || 0
+        const taxRate = season.taxRate || 0.13
+        const commissionRate = season.commissionRate || 0.32
+        const preTax = grossSales / (1 + taxRate)
+        const commission = preTax * commissionRate
+        const bonus = s.bonus || 0
+        const total = commission + bonus
+
+        rows.push([
+          new Date(s.date).toLocaleDateString("en-CA"),
+          grossSales.toFixed(2),
+          preTax.toFixed(2),
+          commission.toFixed(2),
+          bonus.toFixed(2),
+          total.toFixed(2)
+        ])
+      })
+
+      const csv = rows.map(r => r.join(",")).join("\n")
+      const blob = new Blob([csv], { type: "text/csv" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `salespacer-${seasonName.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      alert("Failed to export CSV")
+    } finally {
+      setExporting(null)
+    }
+  }
 
   return (
     <Box sx={{ p: 2, maxWidth: 480, mx: "auto" }}>
@@ -62,7 +112,7 @@ const SeasonHistory = () => {
             {new Date(season.endDate).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
           </Typography>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, mb: 2 }}>
             {[
               { label: "Gross Sales", value: `$${Number(season.totalGrossSales).toFixed(0)}` },
               { label: "Earnings", value: `$${Number(season.totalIncome).toFixed(0)}` },
@@ -75,6 +125,16 @@ const SeasonHistory = () => {
               </Box>
             ))}
           </Box>
+
+          <Button
+            fullWidth
+            variant="outlined"
+            size="small"
+            disabled={exporting === season._id}
+            onClick={() => handleExport(season._id, season.name || "season")}
+          >
+            {exporting === season._id ? "Exporting..." : "📤 Export CSV"}
+          </Button>
         </Card>
       ))}
     </Box>
