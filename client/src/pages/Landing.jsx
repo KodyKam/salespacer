@@ -30,8 +30,16 @@ const Landing = () => {
           component="img"
           src="/logo.png"
           alt="SalesPacer"
-          sx={{ width: 80, borderRadius: 2, mb: 3 }}
+          sx={{ width: 80, borderRadius: 2, mb: 2 }}
         />
+
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          sx={{ opacity: 0.6, letterSpacing: 2, mb: 1, fontSize: 13 }}
+        >
+          SALESPACER
+        </Typography>
 
         <Typography
           variant="h3"
