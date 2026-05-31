@@ -6,6 +6,7 @@ import {
   updateSeason,
   endSeason,
   getSeasonHistory,
+  getSeasonSummaries,
   deleteSeason
 } from "../controllers/seasonController.js"
 import { protect } from "../middleware/authMiddleware.js"
