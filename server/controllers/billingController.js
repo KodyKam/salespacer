@@ -23,6 +23,9 @@ export const createCheckoutSession = async (req, res) => {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { userId },
+      subscription_data: {
+        trial_period_days: 7
+      },
       success_url: `${process.env.CLIENT_URL}/pro-success`,
       cancel_url: `${process.env.CLIENT_URL}/settings`
     })

@@ -173,7 +173,7 @@ const Settings = () => {
               }
             }}
           >
-            Upgrade — $4.99/month
+            Upgrade — Free 7-day trial, then $4.99/month
           </Button>
 
           <Button
@@ -187,7 +187,7 @@ const Settings = () => {
               }
             }}
           >
-            Upgrade — $49.99/year
+            Upgrade — Free 7-day trial, then $49.99/year
           </Button>
 
           <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.5, textAlign: "center" }}>
