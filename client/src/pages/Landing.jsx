@@ -117,7 +117,7 @@ const Landing = () => {
             {
               icon: "➕",
               title: "Log sales in seconds",
-              body: "Tap the + button after each sale. The whole interaction takes under 20 seconds so it fits inside your sales day."
+              body: "Tap the + button after each sale. The whole interaction takes under 10 seconds so it fits inside your sales day."
             },
             {
               icon: "📊",
