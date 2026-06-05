@@ -11,7 +11,7 @@ export const addEntry = async (req, res) => {
 
     const { salesVolume } = req.body
 
-    const season = await Season.findOne({ userId })
+    const season = await Season.findOne({ userId, status: "active" })
     if (!season) {
       return res.status(400).json({ message: "No active season" })
     }

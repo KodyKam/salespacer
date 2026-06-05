@@ -9,7 +9,7 @@ export const startDay = async (req, res) => {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
 
-    const season = await Season.findOne({ userId })
+    const season = await Season.findOne({ userId, status: "active" })
     if (!season) {
       return res.status(400).json({ message: "No season found" })
     }
@@ -39,7 +39,7 @@ export const endDay = async (req, res) => {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
 
-    const season = await Season.findOne({ userId })
+    const season = await Season.findOne({ userId, status: "active" })
     if (!season) {
       return res.status(400).json({ message: "No season found" })
     }
@@ -174,7 +174,7 @@ export const endUnclosedDay = async (req, res) => {
     const { date } = req.body // ISO date string of the day to close
     if (!date) return res.status(400).json({ message: "Date required" })
 
-    const season = await Season.findOne({ userId })
+    const season = await Season.findOne({ userId, status: "active" })
     if (!season) return res.status(400).json({ message: "No season found" })
 
     const userTimezone = req.headers["x-timezone"] || "UTC"
