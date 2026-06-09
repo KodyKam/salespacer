@@ -12,6 +12,7 @@ import { Snackbar, Alert } from "@mui/material"
 import LogoutIcon from "@mui/icons-material/Logout"
 import { IconButton } from "@mui/material"
 import OnboardingTour from "../components/OnboardingTour"
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material"
 
 const Dashboard = () => {
   const { data, refresh } = useDashboard()
@@ -22,6 +23,10 @@ const Dashboard = () => {
   const [openAdd, setOpenAdd] = useState(false)
   const [dismissedYesterday, setDismissedYesterday] = useState(false)
   const [showTour, setShowTour] = useState(false)
+
+  const [showCloseYesterdayModal, setShowCloseYesterdayModal] = useState(false)
+  const [unclosedNotes, setUnclosedNotes] = useState("")
+  const [unclosedBonus, setUnclosedBonus] = useState("")
 
   // Add scroll listener
   useEffect(() => {
@@ -49,9 +54,16 @@ const Dashboard = () => {
 
   const closeYesterday = async () => {
   try {
-    await axios.post("/day/end-unclosed", { date: safe.unclosedDate })
+    await axios.post("/day/end-unclosed", {
+      date: safe.unclosedDate,
+      notes: unclosedNotes,
+      bonus: Number(unclosedBonus) || 0
+    })
     await refresh()
     setDismissedYesterday(true)
+    setShowCloseYesterdayModal(false)
+    setUnclosedNotes("")
+    setUnclosedBonus("")
   } catch (err) {
     alert(err?.response?.data?.message || "Failed to close day")
   }
@@ -251,7 +263,7 @@ const endSeason = async () => {
         size="small"
         variant="contained"
         color="warning"
-        onClick={closeYesterday}
+        onClick={() => setShowCloseYesterdayModal(true)}
       >
         Close Yesterday
       </Button>
@@ -480,6 +492,48 @@ const endSeason = async () => {
     {showTour && (
       <OnboardingTour onComplete={() => setShowTour(false)} />
     )}
+    {/* CLOSE YESTERDAY MODAL */}
+    <Dialog
+      open={showCloseYesterdayModal}
+      onClose={() => setShowCloseYesterdayModal(false)}
+      fullWidth
+      maxWidth="xs"
+    >
+      <DialogTitle>Close Yesterday</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ opacity: 0.6, mb: 2 }}>
+          ${safe.unclosedYesterdaySales.toFixed(0)} in sales from{" "}
+          {safe.unclosedDate
+            ? new Date(safe.unclosedDate).toLocaleDateString("en-CA", { month: "short", day: "numeric" })
+            : "a previous day"
+          }. Add any bonus or notes before locking in.
+        </Typography>
+        <TextField
+          fullWidth
+          label="Bonus ($)"
+          type="number"
+          value={unclosedBonus}
+          onChange={(e) => setUnclosedBonus(e.target.value)}
+          sx={{ mb: 2 }}
+          helperText="Leave blank if unknown — you can add it later in Day Summary"
+        />
+        <TextField
+          fullWidth
+          label="Notes"
+          multiline
+          rows={3}
+          value={unclosedNotes}
+          onChange={(e) => setUnclosedNotes(e.target.value)}
+          placeholder="e.g. Strong closing day, new client signed..."
+        />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={() => setShowCloseYesterdayModal(false)}>Cancel</Button>
+        <Button variant="contained" color="warning" onClick={closeYesterday}>
+      Lock In Day
+    </Button>
+  </DialogActions>
+</Dialog>
     </Box>
   )
 }

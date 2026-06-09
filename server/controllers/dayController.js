@@ -263,11 +263,18 @@ export const endUnclosedDay = async (req, res) => {
       difference,
       status: isSuccess ? "on-track" : "behind",
       isCompleted: true,
-      notes: "Closed retroactively",
-      bonus: 0
+      notes,
+      bonus: Number(bonus) || 0
     })
 
-    res.json({ message: "Day closed successfully", todaySales, todayTarget, isSuccess })
+    res.json({ 
+      message: "Day closed successfully", 
+      todaySales, 
+      todayTarget, 
+      isSuccess, 
+      notes, 
+      bonus: Number(bonus) || 0 
+    })
 
   } catch (err) {
     console.error("END UNCLOSED DAY ERROR:", err)
