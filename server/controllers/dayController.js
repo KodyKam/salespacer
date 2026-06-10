@@ -171,7 +171,7 @@ export const endUnclosedDay = async (req, res) => {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
 
-    const { date } = req.body // ISO date string of the day to close
+    const { date, notes = "", bonus = 0 } = req.body // ISO date string of the day to close
     if (!date) return res.status(400).json({ message: "Date required" })
 
     const season = await Season.findOne({ userId, status: "active" })
